@@ -13,12 +13,12 @@
             "state": {
               "type": "markdown",
               "state": {
-                "file": "README.md",
+                "file": "ai-config.md",
                 "mode": "source",
                 "source": false
               },
               "icon": "lucide-file",
-              "title": "README"
+              "title": "ai-config"
             }
           }
         ]
@@ -199,19 +199,19 @@
       "bases:Создать новую базу": false
     }
   },
-  "active": "ceb1967433fc71d2",
+  "active": "668720e0c8fb06fc",
   "lastOpenFiles": [
+    "questions/exceptions.md",
+    "questions/garbage-collector.md",
+    "questions/java-core.md",
+    "README.md",
     "questions",
     "ai-config.md",
     "Добро пожаловать.md",
     "questions/serialization.md",
-    "README.md",
     "questions/procedural-java.md",
     "questions/oop-java.md",
     "questions/oop.md",
-    "questions/java-core.md",
-    "questions/garbage-collector.md",
-    "questions/exceptions.md",
     "Java"
   ]
 }
