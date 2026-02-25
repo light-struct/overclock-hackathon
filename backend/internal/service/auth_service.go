@@ -81,18 +81,25 @@ func (s *AuthService) Register(ctx context.Context, in RegisterInput) (*AuthResu
 
 func (s *AuthService) Login(ctx context.Context, email, password string) (*AuthResult, error) {
 	email = strings.TrimSpace(strings.ToLower(email))
+	println("[AUTH_SERVICE] Looking up user with email:", email)
+	
 	user, err := s.userRepo.GetByEmail(ctx, email)
 	if err != nil {
+		println("[AUTH_SERVICE] Database error:", err.Error())
 		return nil, err
 	}
 	if user == nil {
+		println("[AUTH_SERVICE] User not found")
 		return nil, errors.New("invalid credentials")
 	}
 
+	println("[AUTH_SERVICE] User found, checking password")
 	if err := bcrypt.CompareHashAndPassword([]byte(user.PasswordHash), []byte(password)); err != nil {
+		println("[AUTH_SERVICE] Password mismatch:", err.Error())
 		return nil, errors.New("invalid credentials")
 	}
 
+	println("[AUTH_SERVICE] Password correct, generating token")
 	token, err := auth.GenerateToken(s.cfg.JWTSecret, user.ID, user.Role, 24*time.Hour)
 	if err != nil {
 		return nil, err

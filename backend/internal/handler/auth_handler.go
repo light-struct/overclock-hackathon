@@ -56,16 +56,20 @@ type loginRequest struct {
 func (h *AuthHandler) login(c *gin.Context) {
 	var req loginRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
+		println("[LOGIN] Failed to bind JSON:", err.Error())
 		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid payload"})
 		return
 	}
 
+	println("[LOGIN] Attempting login for email:", req.Email)
 	res, err := h.svc.Login(c.Request.Context(), req.Email, req.Password)
 	if err != nil {
+		println("[LOGIN] Login failed:", err.Error())
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "invalid credentials"})
 		return
 	}
 
+	println("[LOGIN] Login successful for user:", res.User.Email)
 	c.JSON(http.StatusOK, res)
 }
 
