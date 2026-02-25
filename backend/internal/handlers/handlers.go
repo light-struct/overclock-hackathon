@@ -1,6 +1,8 @@
 package handlers
 
 import (
+	"html"
+	"log"
 	"net/http"
 	"strconv"
 	"strings"
@@ -19,40 +21,35 @@ func NewHandler(s *service.Services) *Handler {
 	return &Handler{services: s}
 }
 
-func (h *Handler) RegisterRoutes(r *gin.Engine) {
+func (h *Handler) RegisterRoutes(r *gin.Engine, jwtSecret string) {
 	api := r.Group("/api")
 	{
-		// Авторизация
 		api.POST("/signup", h.signup)
 		api.POST("/login", h.login)
 		api.POST("/logout", h.logout)
 
-		// Профили
 		api.POST("/profiles", h.createProfile)
 		api.GET("/profiles/:id", h.getProfile)
 
-		// Тесты
-		api.POST("/test/generate", h.GenerateTestHandler) // Генерация
-		api.POST("/test/submit", h.submitTest)            // Сдача и анализ
+		api.POST("/test/generate", h.GenerateTestHandler)
+		api.POST("/test/submit", h.submitTest)
 
-		// Аналитика для учителя
 		api.GET("/analytics/group", h.GetGroupAnalytics)
 
-		// Попытки (история)
 		api.POST("/attempts", h.createAttempt)
 		api.GET("/attempts/user/:userID", h.listAttemptsByUser)
 	}
 }
 
-// --- ХЕНДЛЕРЫ ПРОФИЛЕЙ ---
 func (h *Handler) createProfile(c *gin.Context) {
 	var req models.Profile
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		c.JSON(http.StatusBadRequest, gin.H{"error": sanitizeError(err.Error())})
 		return
 	}
 	if err := h.services.Profiles.CreateProfile(c.Request.Context(), &req); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		log.Printf("Profile creation error: %v", sanitizeForLog(err.Error()))
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to create profile"})
 		return
 	}
 	c.JSON(http.StatusCreated, req)
@@ -67,41 +64,40 @@ func (h *Handler) getProfile(c *gin.Context) {
 	}
 	profile, err := h.services.Profiles.GetProfile(c.Request.Context(), uint(id))
 	if err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
+		c.JSON(http.StatusNotFound, gin.H{"error": "profile not found"})
 		return
 	}
 	c.JSON(http.StatusOK, profile)
 }
 
-// --- ХЕНДЛЕРЫ ГЕНЕРАЦИИ ТЕСТА ---
 type GenerateRequest struct {
-	Subject    string `json:"subject"`
-	Topic      string `json:"topic"`
-	Difficulty string `json:"difficulty"`
-	Lang       string `json:"lang"`
+	Subject    string `json:"subject" binding:"required"`
+	Topic      string `json:"topic" binding:"required"`
+	Difficulty string `json:"difficulty" binding:"required"`
+	Lang       string `json:"lang" binding:"required"`
 }
 
 func (h *Handler) GenerateTestHandler(c *gin.Context) {
 	var req GenerateRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		c.JSON(http.StatusBadRequest, gin.H{"error": sanitizeError(err.Error())})
 		return
 	}
 
 	if h.services.Gemini == nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "AI service is not initialized"})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "AI service unavailable"})
 		return
 	}
 
 	test, err := h.services.Gemini.GenerateTest(req.Subject, req.Topic, req.Lang, req.Difficulty)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "AI error: " + err.Error()})
+		log.Printf("AI generation error: %v", sanitizeForLog(err.Error()))
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to generate test"})
 		return
 	}
 	c.JSON(http.StatusOK, test)
 }
 
-// --- ХЕНДЛЕРЫ СДАЧИ ТЕСТА ---
 type submitTestQuestion struct {
 	ID            int    `json:"id"`
 	Text          string `json:"text"`
@@ -120,7 +116,7 @@ type submitTestRequest struct {
 func (h *Handler) submitTest(c *gin.Context) {
 	var req submitTestRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		c.JSON(http.StatusBadRequest, gin.H{"error": sanitizeError(err.Error())})
 		return
 	}
 
@@ -128,11 +124,10 @@ func (h *Handler) submitTest(c *gin.Context) {
 	answerSummaries := make([]service.AnswerSummary, 0, len(req.Questions))
 
 	for _, q := range req.Questions {
-		// Сравнение без учета регистра и пробелов
 		userAns := strings.TrimSpace(strings.ToLower(q.UserAnswer))
 		correctAns := strings.TrimSpace(strings.ToLower(q.CorrectAnswer))
 		isCorrect := userAns != "" && userAns == correctAns
-		
+
 		if isCorrect {
 			correct++
 		}
@@ -150,7 +145,6 @@ func (h *Handler) submitTest(c *gin.Context) {
 		score = float64(correct) / float64(len(req.Questions)) * 100.0
 	}
 
-	// Анализ через AI
 	advice := "AI service unavailable"
 	if h.services.Gemini != nil {
 		var err error
@@ -162,13 +156,11 @@ func (h *Handler) submitTest(c *gin.Context) {
 			score,
 		)
 		if err != nil {
-			// Логируем ошибку, но не валим запрос пользователю
-			println("AI Analysis failed:", err.Error())
-			advice = "Не удалось получить анализ от ИИ."
+			log.Printf("AI analysis error: %v", sanitizeForLog(err.Error()))
+			advice = "Failed to get AI analysis"
 		}
 	}
 
-	// Сохранение в БД
 	attempt := &models.TestAttempt{
 		UserID:     req.UserID,
 		Subject:    req.Subject,
@@ -179,7 +171,8 @@ func (h *Handler) submitTest(c *gin.Context) {
 	}
 
 	if err := h.services.TestAttempts.CreateAttempt(c.Request.Context(), attempt); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to save result", "details": err.Error()})
+		log.Printf("Failed to save attempt: %v", sanitizeForLog(err.Error()))
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to save result"})
 		return
 	}
 
@@ -189,15 +182,14 @@ func (h *Handler) submitTest(c *gin.Context) {
 	})
 }
 
-// Прочие методы
 func (h *Handler) createAttempt(c *gin.Context) {
 	var req models.TestAttempt
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		c.JSON(http.StatusBadRequest, gin.H{"error": sanitizeError(err.Error())})
 		return
 	}
 	if err := h.services.TestAttempts.CreateAttempt(c.Request.Context(), &req); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to create attempt"})
 		return
 	}
 	c.JSON(http.StatusCreated, req)
@@ -212,23 +204,21 @@ func (h *Handler) listAttemptsByUser(c *gin.Context) {
 	}
 	attempts, err := h.services.TestAttempts.ListAttemptsByUser(c.Request.Context(), uint(userID))
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to fetch attempts"})
 		return
 	}
 	c.JSON(http.StatusOK, attempts)
 }
 
-// --- Аналитика для учителя ---
 type GroupAnalyticsResponse struct {
 	AverageScore float64  `json:"average_score"`
 	WeakTopics   []string `json:"weak_topics"`
 }
 
-// GetGroupAnalytics возвращает средний балл и слабые темы по всем попыткам.
 func (h *Handler) GetGroupAnalytics(c *gin.Context) {
 	avg, weakTopics, err := h.services.TestAttempts.GetGroupAnalytics(c.Request.Context())
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to fetch analytics"})
 		return
 	}
 
@@ -238,8 +228,6 @@ func (h *Handler) GetGroupAnalytics(c *gin.Context) {
 	}
 	c.JSON(http.StatusOK, resp)
 }
-
-// --- Авторизация ---
 
 type signupRequest struct {
 	Email    string `json:"email" binding:"required,email"`
@@ -256,13 +244,13 @@ type loginRequest struct {
 func (h *Handler) signup(c *gin.Context) {
 	var req signupRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		c.JSON(http.StatusBadRequest, gin.H{"error": sanitizeError(err.Error())})
 		return
 	}
 
 	user, err := h.services.Auth.Signup(c.Request.Context(), req.Email, req.Password, req.Username, req.Role)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		c.JSON(http.StatusBadRequest, gin.H{"error": sanitizeError(err.Error())})
 		return
 	}
 
@@ -277,13 +265,13 @@ func (h *Handler) signup(c *gin.Context) {
 func (h *Handler) login(c *gin.Context) {
 	var req loginRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		c.JSON(http.StatusBadRequest, gin.H{"error": sanitizeError(err.Error())})
 		return
 	}
 
 	token, user, err := h.services.Auth.Login(c.Request.Context(), req.Email, req.Password)
 	if err != nil {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "invalid email or password"})
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "invalid credentials"})
 		return
 	}
 
@@ -295,8 +283,18 @@ func (h *Handler) login(c *gin.Context) {
 }
 
 func (h *Handler) logout(c *gin.Context) {
-	// JWT авторизация статeless, поэтому на сервере просто говорим клиенту удалить токен
 	c.JSON(http.StatusOK, gin.H{
-		"message": "Вы успешно вышли. Удалите токен на клиенте.",
+		"message": "Logged out successfully. Remove token on client.",
 	})
+}
+
+func sanitizeError(err string) string {
+	return html.EscapeString(err)
+}
+
+func sanitizeForLog(input string) string {
+	input = strings.ReplaceAll(input, "\n", " ")
+	input = strings.ReplaceAll(input, "\r", " ")
+	input = strings.ReplaceAll(input, "\t", " ")
+	return strings.TrimSpace(input)
 }

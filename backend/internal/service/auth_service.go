@@ -3,7 +3,6 @@ package service
 import (
 	"context"
 	"errors"
-	"os"
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
@@ -23,20 +22,23 @@ type authService struct {
 	jwtSecret []byte
 }
 
-func NewAuthService(repo repository.UserRepository) AuthService {
-	secret := os.Getenv("JWT_SECRET")
-	if secret == "" {
-		secret = "dev-secret"
+func NewAuthService(repo repository.UserRepository, jwtSecret string) AuthService {
+	if jwtSecret == "" {
+		panic("JWT_SECRET cannot be empty")
 	}
 	return &authService{
 		repo:      repo,
-		jwtSecret: []byte(secret),
+		jwtSecret: []byte(jwtSecret),
 	}
 }
 
 func (s *authService) Signup(ctx context.Context, email, password, username, role string) (*models.User, error) {
 	if role == "" {
 		role = "student"
+	}
+
+	if len(password) < 6 {
+		return nil, errors.New("password must be at least 6 characters")
 	}
 
 	hash, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
@@ -61,10 +63,10 @@ func (s *authService) Signup(ctx context.Context, email, password, username, rol
 func (s *authService) Login(ctx context.Context, email, password string) (string, *models.User, error) {
 	user, err := s.repo.FindByEmail(ctx, email)
 	if err != nil {
-		return "", nil, err
+		return "", nil, errors.New("invalid credentials")
 	}
 
-	if bcrypt.CompareHashAndPassword([]byte(user.PasswordHash), []byte(password)) != nil {
+	if err := bcrypt.CompareHashAndPassword([]byte(user.PasswordHash), []byte(password)); err != nil {
 		return "", nil, errors.New("invalid credentials")
 	}
 
