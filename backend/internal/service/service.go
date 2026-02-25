@@ -14,7 +14,6 @@ type Services struct {
 	Auth         AuthService
 }
 
-// Интерфейсы
 type ProfileService interface {
 	CreateProfile(ctx context.Context, p *models.Profile) error
 	GetProfile(ctx context.Context, id uint) (*models.Profile, error)
@@ -26,7 +25,6 @@ type TestAttemptService interface {
 	GetGroupAnalytics(ctx context.Context) (float64, []string, error)
 }
 
-// Реализация
 type profileService struct {
 	repo repository.ProfileRepository
 }
@@ -35,30 +33,22 @@ type testAttemptService struct {
 	repo repository.TestAttemptRepository
 }
 
-// КОНСТРУКТОР (Исправленная версия)
-func NewServices(r *repository.Repositories) *Services {
-	// Инициализируем Gemini прямо здесь
-	geminiService, err := NewGeminiServiceFromEnv(context.Background())
+func NewServices(r *repository.Repositories, geminiKey, jwtSecret string) (*Services, error) {
+	geminiService, err := NewGeminiService(context.Background(), geminiKey)
 	if err != nil {
-		fmt.Printf("⚠️ Ошибка инициализации Gemini: %v\n", err)
-		// В продакшене тут надо падать, но для хакатона продолжим, чтобы не крашить сервер
+		return nil, fmt.Errorf("failed to initialize Gemini: %w", err)
 	}
 
-	auth := NewAuthService(r.Users)
+	auth := NewAuthService(r.Users, jwtSecret)
 
 	return &Services{
-		Profiles: &profileService{
-			repo: r.Profiles,
-		},
-		TestAttempts: &testAttemptService{
-			repo: r.TestAttempts,
-		},
-		Gemini: geminiService,
-		Auth:   auth,
-	}
+		Profiles:     &profileService{repo: r.Profiles},
+		TestAttempts: &testAttemptService{repo: r.TestAttempts},
+		Gemini:       geminiService,
+		Auth:         auth,
+	}, nil
 }
 
-// Методы сервисов
 func (s *profileService) CreateProfile(ctx context.Context, p *models.Profile) error {
 	return s.repo.Create(ctx, p)
 }
@@ -75,7 +65,6 @@ func (s *testAttemptService) ListAttemptsByUser(ctx context.Context, userID uint
 	return s.repo.ListByUser(ctx, userID)
 }
 
-// GetGroupAnalytics считает средний балл и слабые темы для группы.
 func (s *testAttemptService) GetGroupAnalytics(ctx context.Context) (float64, []string, error) {
 	avg, err := s.repo.GetOverallAverageScore(ctx)
 	if err != nil {
