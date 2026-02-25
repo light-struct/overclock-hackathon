@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"strings"
 
 	"backend/internal/domain"
 	"backend/internal/repository"
@@ -35,28 +36,45 @@ func (s *ExamService) GenerateQuiz(ctx context.Context, in GenerateQuizInput) (a
 		"hard":   "Advanced analytical questions involving edge cases, synthesis, and deep understanding.",
 	}[in.Difficulty]
 
-	prompt := fmt.Sprintf(`Generate a quiz about "%s" with exactly %d questions at %s difficulty level.
+	prompt := fmt.Sprintf(`Сгенерируй тест по теме "%s" из %d вопросов уровня сложности %s.
 
 %s
 
-You MUST respond with a valid JSON array only. No markdown, no explanation, no code blocks. Just a raw JSON array.
+ИСПОЛЬЗУЙ ТОЛЬКО ВОПРОСЫ ИЗ БАЗЫ ДАННЫХ (ai-knowledge-base/questions/).
+Выбери вопросы случайно из соответствующего файла и уровня сложности.
 
-Each element must be an object with these exact fields:
-- "questionNumber": integer starting from 1
-- "question": the question text (string)
-- "options": array of 4 answer options as strings (A, B, C, D) — even for true/false, provide 4 options
-- "correctAnswer": the exact text of the correct option (must match one of the options exactly)
+ВЕРНИ ТОЛЬКО ВАЛИДНЫЙ JSON МАССИВ БЕЗ MARKDOWN, БЕЗ ОБЪЯСНЕНИЙ.
 
-Return ONLY the JSON array.`, in.Topic, in.NumQuestions, in.Difficulty, difficultyGuide)
+Формат каждого элемента:
+{
+  "questionNumber": 1,
+  "question": "текст вопроса",
+  "options": ["A) вариант", "B) вариант", "C) вариант", "D) вариант"],
+  "correctAnswer": "точный текст правильного варианта"
+}
 
-	text, err := s.ai.GenerateQuizQuestions(ctx, prompt)
+ВЕРНИ ТОЛЬКО JSON МАССИВ.`, in.Topic, in.NumQuestions, in.Difficulty, difficultyGuide)
+
+	text, err := s.ai.GenerateQuizQuestions(ctx, in.Topic, in.Difficulty, prompt)
 	if err != nil {
 		return nil, err
 	}
 
+	fmt.Printf("[DEBUG] Gemini response (first 500 chars): %s\n", text[:min(len(text), 500)])
+
+	// Очистка от markdown блоков
+	text = strings.TrimSpace(text)
+	if strings.HasPrefix(text, "```") {
+		lines := strings.Split(text, "\n")
+		if len(lines) > 2 {
+			text = strings.Join(lines[1:len(lines)-1], "\n")
+		}
+	}
+	text = strings.TrimSpace(text)
+
 	var questions any
 	if err := json.Unmarshal([]byte(text), &questions); err != nil {
-		return nil, fmt.Errorf("parse gemini response: %w", err)
+		return nil, fmt.Errorf("parse gemini response: %w (response: %s)", err, text[:min(len(text), 200)])
 	}
 	return questions, nil
 }
@@ -89,3 +107,9 @@ func (s *ExamService) ListAttemptsForUser(ctx context.Context, userID int64) ([]
 	return s.attempts.ListByUser(ctx, userID)
 }
 
+func min(a, b int) int {
+	if a < b {
+		return a
+	}
+	return b
+}
