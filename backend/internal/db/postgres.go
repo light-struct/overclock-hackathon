@@ -15,7 +15,9 @@ import (
 // чтобы убедиться, что соединение с БД реально работает.
 func NewPostgresConnection(dsn string) (*gorm.DB, error) {
 	cfg := &gorm.Config{
-		Logger: logger.Default.LogMode(logger.Info),
+		Logger:                 logger.Default.LogMode(logger.Warn),
+		SkipDefaultTransaction: true,
+		PrepareStmt:            true,
 	}
 
 	// Основное подключение через GORM

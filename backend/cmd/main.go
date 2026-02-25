@@ -6,7 +6,6 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
-	"strings"
 	"syscall"
 	"time"
 
@@ -16,7 +15,6 @@ import (
 	"exam-system/internal/config"
 	"exam-system/internal/db"
 	"exam-system/internal/handlers"
-	"exam-system/internal/models"
 	"exam-system/internal/repository"
 	"exam-system/internal/service"
 )
@@ -39,12 +37,7 @@ func main() {
 		}
 	}()
 
-	if err := gormDB.AutoMigrate(&models.User{}, &models.Profile{}, &models.TestAttempt{}); err != nil {
-		if !strings.Contains(err.Error(), "does not exist") {
-			log.Fatalf("Migration error: %v", err)
-		}
-		log.Printf("Migration warning (ignored): %v", err)
-	}
+
 
 	repos := repository.NewRepositories(gormDB)
 
@@ -55,7 +48,9 @@ func main() {
 
 	handler := handlers.NewHandler(services)
 
-	r := gin.Default()
+	gin.SetMode(gin.ReleaseMode)
+	r := gin.New()
+	r.Use(gin.Recovery())
 
 	r.Use(cors.New(cors.Config{
 		AllowOrigins:     []string{"http://localhost:3000", "http://localhost:5173"},
