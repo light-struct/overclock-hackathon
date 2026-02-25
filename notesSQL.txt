@@ -1,0 +1,73 @@
+-- ============================================
+-- 1. Таблица пользователей (auth users)
+-- ============================================
+CREATE TABLE IF NOT EXISTS users (
+    id            BIGSERIAL PRIMARY KEY,
+    email         VARCHAR(255) NOT NULL UNIQUE,
+    username      VARCHAR(255) NOT NULL,
+    password_hash VARCHAR(255) NOT NULL,
+    role          VARCHAR(50)  NOT NULL,      -- 'admin', 'student', 'teacher', ...
+    created_at    TIMESTAMPTZ  NOT NULL DEFAULT NOW(),
+    updated_at    TIMESTAMPTZ  NOT NULL DEFAULT NOW()
+);
+
+-- Индекс по email (на случай, если UNIQUE снимут)
+CREATE INDEX IF NOT EXISTS idx_users_email ON users(email);
+
+-- ============================================
+-- 2. Таблица профилей (расширенные данные)
+-- ============================================
+CREATE TABLE IF NOT EXISTS profiles (
+    id             BIGSERIAL PRIMARY KEY,
+    full_name      VARCHAR(255) NOT NULL,
+    role           VARCHAR(100) NOT NULL,
+    preferred_lang VARCHAR(50),
+    created_at     TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at     TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+-- ============================================
+-- 3. Таблица попыток теста (история экзаменов)
+-- ============================================
+CREATE TABLE IF NOT EXISTS test_attempts (
+    id          BIGSERIAL PRIMARY KEY,
+    user_id     BIGINT      NOT NULL,
+    subject     VARCHAR(255) NOT NULL,
+    topic       VARCHAR(255) NOT NULL,
+    score       DOUBLE PRECISION NOT NULL,    -- 0..100
+    language    VARCHAR(50),
+    ai_feedback TEXT,
+    created_at  TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at  TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+
+    CONSTRAINT fk_test_attempts_user
+        FOREIGN KEY (user_id) REFERENCES users(id)
+        ON DELETE CASCADE
+);
+
+CREATE INDEX IF NOT EXISTS idx_test_attempts_user_id
+    ON test_attempts(user_id);
+
+CREATE INDEX IF NOT EXISTS idx_test_attempts_subject_topic
+    ON test_attempts(subject, topic);
+
+-- ============================================
+-- 4. Пользователи по умолчанию
+--    Пароль у обоих: "password"
+--    bcrypt-хеш: $2a$10$7EqJtq98hPqEX7fNZaFWoO5rY6Qf.KqvLeKZpQx0R8V1fAd9k6q.m
+-- ============================================
+
+INSERT INTO users (email, username, password_hash, role)
+VALUES
+  ('admin@example.com',   'admin',
+   '$2a$10$7EqJtq98hPqEX7fNZaFWoO5rY6Qf.KqvLeKZpQx0R8V1fAd9k6q.m',
+   'admin'),
+  ('student@example.com', 'student',
+   '$2a$10$7EqJtq98hPqEX7fNZaFWoO5rY6Qf.KqvLeKZpQx0R8V1fAd9k6q.m',
+   'student');
+
+-- (опционально) базовые профили для этих пользователей
+INSERT INTO profiles (full_name, role, preferred_lang)
+VALUES
+  ('Admin User',   'admin',   'en'),
+  ('Student User', 'student', 'en');
