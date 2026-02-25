@@ -10,6 +10,7 @@ import (
 
 	"exam-system/internal/db"
 	"exam-system/internal/handlers"
+	"exam-system/internal/models"
 	"exam-system/internal/repository"
 	"exam-system/internal/service"
 )
@@ -30,6 +31,11 @@ func main() {
 	gormDB, err := db.NewPostgresConnection(dsn)
 	if err != nil {
 		log.Fatalf("Ошибка подключения к БД: %v", err)
+	}
+
+	// Автомиграции для основных сущностей (Users, Profiles, TestAttempts)
+	if err := gormDB.AutoMigrate(&models.User{}, &models.Profile{}, &models.TestAttempt{}); err != nil {
+		log.Fatalf("Ошибка автомиграции: %v", err)
 	}
 
 	// 4. Инициализируем слои приложения
