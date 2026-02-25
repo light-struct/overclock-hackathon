@@ -13,6 +13,11 @@ type ProfileRepository interface {
 	FindByID(ctx context.Context, id uint) (*models.Profile, error)
 }
 
+type UserRepository interface {
+	Create(ctx context.Context, u *models.User) error
+	FindByEmail(ctx context.Context, email string) (*models.User, error)
+}
+
 type TestAttemptRepository interface {
 	Create(ctx context.Context, t *models.TestAttempt) error
 	ListByUser(ctx context.Context, userID uint) ([]models.TestAttempt, error)
@@ -23,6 +28,7 @@ type TestAttemptRepository interface {
 // Repositories is the aggregate of all domain repositories.
 // Exported so it can be used by the service layer.
 type Repositories struct {
+	Users       UserRepository
 	Profiles     ProfileRepository
 	TestAttempts TestAttemptRepository
 }
@@ -32,6 +38,10 @@ type profileRepo struct {
 }
 
 type testAttemptRepo struct {
+	db *gorm.DB
+}
+
+type userRepo struct {
 	db *gorm.DB
 }
 
@@ -45,9 +55,22 @@ type TopicStat struct {
 // NewRepositories wires all concrete repository implementations.
 func NewRepositories(db *gorm.DB) *Repositories {
 	return &Repositories{
+		Users:       &userRepo{db: db},
 		Profiles:     &profileRepo{db: db},
 		TestAttempts: &testAttemptRepo{db: db},
 	}
+}
+
+func (r *userRepo) Create(ctx context.Context, u *models.User) error {
+	return r.db.WithContext(ctx).Create(u).Error
+}
+
+func (r *userRepo) FindByEmail(ctx context.Context, email string) (*models.User, error) {
+	var user models.User
+	if err := r.db.WithContext(ctx).Where("email = ?", email).First(&user).Error; err != nil {
+		return nil, err
+	}
+	return &user, nil
 }
 
 func (r *profileRepo) Create(ctx context.Context, p *models.Profile) error {

@@ -22,6 +22,11 @@ func NewHandler(s *service.Services) *Handler {
 func (h *Handler) RegisterRoutes(r *gin.Engine) {
 	api := r.Group("/api")
 	{
+		// Авторизация
+		api.POST("/signup", h.signup)
+		api.POST("/login", h.login)
+		api.POST("/logout", h.logout)
+
 		// Профили
 		api.POST("/profiles", h.createProfile)
 		api.GET("/profiles/:id", h.getProfile)
@@ -232,4 +237,66 @@ func (h *Handler) GetGroupAnalytics(c *gin.Context) {
 		WeakTopics:   weakTopics,
 	}
 	c.JSON(http.StatusOK, resp)
+}
+
+// --- Авторизация ---
+
+type signupRequest struct {
+	Email    string `json:"email" binding:"required,email"`
+	Password string `json:"password" binding:"required,min=6"`
+	Username string `json:"username" binding:"required"`
+	Role     string `json:"role"`
+}
+
+type loginRequest struct {
+	Email    string `json:"email" binding:"required,email"`
+	Password string `json:"password" binding:"required"`
+}
+
+func (h *Handler) signup(c *gin.Context) {
+	var req signupRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	user, err := h.services.Auth.Signup(c.Request.Context(), req.Email, req.Password, req.Username, req.Role)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusCreated, gin.H{
+		"id":       user.ID,
+		"email":    user.Email,
+		"username": user.Username,
+		"role":     user.Role,
+	})
+}
+
+func (h *Handler) login(c *gin.Context) {
+	var req loginRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	token, user, err := h.services.Auth.Login(c.Request.Context(), req.Email, req.Password)
+	if err != nil {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "invalid email or password"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"token":    token,
+		"username": user.Username,
+		"role":     user.Role,
+	})
+}
+
+func (h *Handler) logout(c *gin.Context) {
+	// JWT авторизация статeless, поэтому на сервере просто говорим клиенту удалить токен
+	c.JSON(http.StatusOK, gin.H{
+		"message": "Вы успешно вышли. Удалите токен на клиенте.",
+	})
 }

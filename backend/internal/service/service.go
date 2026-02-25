@@ -11,6 +11,7 @@ type Services struct {
 	Profiles     ProfileService
 	TestAttempts TestAttemptService
 	Gemini       GeminiService
+	Auth         AuthService
 }
 
 // Интерфейсы
@@ -43,6 +44,8 @@ func NewServices(r *repository.Repositories) *Services {
 		// В продакшене тут надо падать, но для хакатона продолжим, чтобы не крашить сервер
 	}
 
+	auth := NewAuthService(r.Users)
+
 	return &Services{
 		Profiles: &profileService{
 			repo: r.Profiles,
@@ -51,6 +54,7 @@ func NewServices(r *repository.Repositories) *Services {
 			repo: r.TestAttempts,
 		},
 		Gemini: geminiService,
+		Auth:   auth,
 	}
 }
 
