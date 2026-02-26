@@ -15,6 +15,8 @@ interface User {
 interface Attempt {
   id: string
   user_id: string
+  subject?: string
+  topic?: string
   score: number
   created_at: string | null
   student_name?: string
@@ -80,26 +82,36 @@ export function ProfileCard() {
           else if (Array.isArray(d)) arr = d
           else if (d && typeof d === 'object') arr = Object.values(d)
 
-          arr = arr.filter(a => a) // убираем null/undefined
+          arr = arr.filter(a => a)
+          // Убираем дубликаты по id (одна попытка — одна запись)
+          const seen = new Set<string>()
+          arr = arr.filter(a => {
+            const key = String(a.id ?? '')
+            if (seen.has(key)) return false
+            seen.add(key)
+            return true
+          })
 
           if (data.role === 'admin') {
-            // админ видит всех студентов с именами
             const userMap = new Map(allUsers.map(u => [u.id, u.name]))
             const adminAttempts = arr.map(a => ({
               id: a.id ?? 'unknown',
               user_id: a.user_id ?? 'unknown',
+              subject: a.subject,
+              topic: a.topic,
               score: a.score ?? 0,
               created_at: a.created_at ?? null,
               student_name: userMap.get(String(a.user_id)) || 'Unknown'
             }))
             setAttempts(adminAttempts)
           } else {
-            // студент видит только свои попытки
             const ownAttempts = arr
               .filter(a => a.user_id === data.id)
               .map(a => ({
                 id: a.id ?? 'unknown',
                 user_id: a.user_id ?? data.id,
+                subject: a.subject,
+                topic: a.topic,
                 score: a.score ?? 0,
                 created_at: a.created_at ?? null
               }))
@@ -170,24 +182,33 @@ export function ProfileCard() {
                 {attempts.map(a => {
                   const displayDate = formatDateSafe(a.created_at)
                   const studentName = a.student_name ?? ''
-
                   return (
                     <li key={a.id ?? JSON.stringify(a)} className="rounded-md border p-3 bg-card">
-                      <div className="flex items-center justify-between">
+                      <div className="flex items-center justify-between gap-2 flex-wrap">
                         <div>
                           {user?.role === 'admin' && studentName && (
-                            <div className="text-sm text-muted-foreground">
-                              Student: {studentName}
-                            </div>
+                            <div className="text-sm text-muted-foreground">Student: {studentName}</div>
                           )}
                           <div className="text-sm text-muted-foreground">{t.profile.date}</div>
                           <div className="text-sm">{displayDate}</div>
+                          {(a.subject || a.topic) && (
+                            <div className="text-xs text-muted-foreground mt-1">
+                              {[a.subject, a.topic].filter(Boolean).join(' · ')}
+                            </div>
+                          )}
                         </div>
-                        <div className="text-right">
-                          <div className="text-sm text-muted-foreground">{t.profile.score}</div>
-                          <div className="text-lg font-medium">
-                            {typeof a.score === 'number' ? a.score : a.score ? String(a.score) : '-'}
+                        <div className="flex items-center gap-3">
+                          <div className="text-right">
+                            <div className="text-sm text-muted-foreground">{t.profile.score}</div>
+                            <div className="text-lg font-medium">
+                              {typeof a.score === 'number' ? a.score : a.score ? String(a.score) : '-'}
+                            </div>
                           </div>
+                          {user?.role !== 'admin' && (
+                            <Link href={`/profile/attempts/${a.id}`}>
+                              <Button variant="outline" size="sm">{t.profile.viewAttempt}</Button>
+                            </Link>
+                          )}
                         </div>
                       </div>
                     </li>

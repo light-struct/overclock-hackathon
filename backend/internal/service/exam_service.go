@@ -80,6 +80,7 @@ type SaveAttemptInput struct {
 	Score    float64 `json:"score"`
 	Language string  `json:"language"`
 	Feedback string  `json:"ai_feedback"`
+	Results  string  `json:"results"` // JSON array of question results
 }
 
 func (s *ExamService) SaveAttempt(ctx context.Context, in SaveAttemptInput) (*domain.TestAttempt, error) {
@@ -90,11 +91,28 @@ func (s *ExamService) SaveAttempt(ctx context.Context, in SaveAttemptInput) (*do
 		Score:      in.Score,
 		Language:   in.Language,
 		AIFeedback: in.Feedback,
+		Results:    in.Results,
 	}
 	if err := s.attempts.Create(ctx, att); err != nil {
 		return nil, err
 	}
 	return att, nil
+}
+
+func (s *ExamService) GetAttemptByID(ctx context.Context, attemptID int64, userID int64) (*domain.TestAttempt, error) {
+	att, err := s.attempts.GetByID(ctx, attemptID)
+	if err != nil {
+		return nil, err
+	}
+	if att.UserID != userID {
+		return nil, nil
+	}
+	return att, nil
+}
+
+// GetAttemptByIDAny returns any attempt by ID (for admin).
+func (s *ExamService) GetAttemptByIDAny(ctx context.Context, attemptID int64) (*domain.TestAttempt, error) {
+	return s.attempts.GetByID(ctx, attemptID)
 }
 
 func (s *ExamService) ListAttemptsForUser(ctx context.Context, userID int64) ([]domain.TestAttempt, error) {

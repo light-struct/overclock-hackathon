@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"fmt"
 	"net/http"
 
 	"backend/internal/auth"
@@ -20,6 +21,7 @@ func NewExamHandler(svc *service.ExamService) *ExamHandler {
 
 func (h *ExamHandler) RegisterRoutes(r *gin.RouterGroup) {
 	r.POST("/quiz/generate", h.generateQuiz)
+	r.GET("/attempts/:id", h.getAttemptByID) // более специфичный маршрут первым
 	r.GET("/attempts", h.listAttempts)
 	r.POST("/attempts", h.saveAttempt)
 }
@@ -71,6 +73,50 @@ func (h *ExamHandler) listAttempts(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, gin.H{"attempts": attempts})
+}
+
+func (h *ExamHandler) getAttemptByID(c *gin.Context) {
+	userIDVal, ok := c.Get(auth.ContextUserIDKey)
+	if !ok {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "no user in context"})
+		return
+	}
+	var userID int64
+	switch v := userIDVal.(type) {
+	case int64:
+		userID = v
+	case float64:
+		userID = int64(v)
+	default:
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "invalid user id type"})
+		return
+	}
+	idParam := c.Param("id")
+	var attemptID int64
+	if _, err := fmt.Sscanf(idParam, "%d", &attemptID); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid attempt id"})
+		return
+	}
+	roleVal, _ := c.Get(auth.ContextRoleKey)
+	role, _ := roleVal.(string)
+	isAdmin := role == "admin" || role == "teacher"
+
+	var att *domain.TestAttempt
+	var err error
+	if isAdmin {
+		att, err = h.svc.GetAttemptByIDAny(c.Request.Context(), attemptID)
+	} else {
+		att, err = h.svc.GetAttemptByID(c.Request.Context(), attemptID, userID)
+	}
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	if att == nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "attempt not found"})
+		return
+	}
+	c.JSON(http.StatusOK, att)
 }
 
 func (h *ExamHandler) saveAttempt(c *gin.Context) {

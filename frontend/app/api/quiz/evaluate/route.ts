@@ -39,21 +39,19 @@ export async function POST(req: NextRequest) {
       })
     }
 
-    // 🤖 AI evaluation
-    const prompt = `
-You are a quiz evaluator.
+    // 🤖 AI evaluation — запрос полноценного объяснения от ИИ
+    const prompt = `You are a tutor. Evaluate this quiz answer and explain in 2-4 sentences WHY the correct answer is correct and, if the student was wrong, WHY their answer is wrong and what they should remember. Use the same language as the question.
 
-Question: "${question}"
-Student's Answer: "${userAnswer}"
-Correct Answer: "${correctAnswer}"
+Question: "${question.replace(/"/g, '\\"')}"
+Student's Answer: "${userAnswer.replace(/"/g, '\\"')}"
+Correct Answer: "${correctAnswer.replace(/"/g, '\\"')}"
 
-Respond ONLY with valid JSON:
+Respond ONLY with valid JSON (no markdown, no other text). Use the exact key names. For "correctAnswer" copy the Correct Answer from above.
 {
-  "score": 0 | 0.5 | 1,
-  "correctAnswer": "${correctAnswer}",
-  "explanation": "1-2 sentence explanation"
-}
-`
+  "score": 0 or 0.5 or 1,
+  "correctAnswer": "<same as Correct Answer above>",
+  "explanation": "Your clear educational explanation: why the right answer is right; if wrong — what mistake the student made and what to remember."
+}`
 
     const response = await fetch(
       `https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key=${apiKey}`,
@@ -63,8 +61,8 @@ Respond ONLY with valid JSON:
         body: JSON.stringify({
           contents: [{ parts: [{ text: prompt }] }],
           generationConfig: {
-            temperature: 0.1,
-            maxOutputTokens: 512,
+            temperature: 0.2,
+            maxOutputTokens: 800,
           },
         }),
       }

@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useState, useRef } from "react"
 import {
   GraduationCap,
   CheckCircle2,
@@ -24,6 +24,7 @@ interface QuizResultsProps {
 export function QuizResults({ config, results, onRestart }: QuizResultsProps) {
   const { token } = useApp()
   const [saved, setSaved] = useState(false)
+  const saveStarted = useRef(false)
   
   const totalScore = results.reduce((sum, r) => sum + r.score, 0)
   const maxScore = results.length
@@ -33,14 +34,13 @@ export function QuizResults({ config, results, onRestart }: QuizResultsProps) {
   const partialCount = results.filter((r) => r.score > 0 && r.score < 1).length
   const incorrectCount = results.filter((r) => r.score === 0).length
 
-  // Save results to backend
+  // Save full results to backend (once only, no duplicate)
   useEffect(() => {
-    const saveAttempt = async () => {
-      if (saved) return
-      
-      const tok = token || localStorage.getItem('token')
-      if (!tok) return
-
+    if (saveStarted.current || saved) return
+    const tok = token || localStorage.getItem('token')
+    if (!tok) return
+    saveStarted.current = true
+    const run = async () => {
       try {
         await fetch(`${process.env.NEXT_PUBLIC_API_URL}/exam/attempts`, {
           method: 'POST',
@@ -54,16 +54,17 @@ export function QuizResults({ config, results, onRestart }: QuizResultsProps) {
             score: percentage,
             language: 'en',
             ai_feedback: `${correctCount} correct, ${incorrectCount} incorrect`,
+            results: JSON.stringify(results),
           }),
         })
         setSaved(true)
       } catch (error) {
         console.error('Failed to save attempt:', error)
+        saveStarted.current = false
       }
     }
-
-    saveAttempt()
-  }, [config, percentage, correctCount, incorrectCount, token, saved])
+    run()
+  }, [config.topic, config.difficulty, percentage, correctCount, incorrectCount, token, saved, results])
 
   const getRating = () => {
     if (percentage >= 90) return { label: "Excellent", color: "text-[var(--success)]" }

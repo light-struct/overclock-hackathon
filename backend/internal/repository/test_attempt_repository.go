@@ -18,24 +18,28 @@ func NewTestAttemptRepository(db *pgxpool.Pool) *TestAttemptRepository {
 
 func (r *TestAttemptRepository) Create(ctx context.Context, t *domain.TestAttempt) error {
 	const q = `
-		INSERT INTO test_attempts (user_id, subject, topic, score, language, ai_feedback)
-		VALUES ($1, $2, $3, $4, $5, $6)
+		INSERT INTO test_attempts (user_id, subject, topic, score, language, ai_feedback, results)
+		VALUES ($1, $2, $3, $4, $5, $6, $7)
 		RETURNING id, created_at, updated_at;
 	`
+	var resultsVal *string
+	if t.Results != "" {
+		resultsVal = &t.Results
+	}
 	return r.db.QueryRow(ctx, q,
-		t.UserID, t.Subject, t.Topic, t.Score, t.Language, t.AIFeedback,
+		t.UserID, t.Subject, t.Topic, t.Score, t.Language, t.AIFeedback, resultsVal,
 	).Scan(&t.ID, &t.CreatedAt, &t.UpdatedAt)
 }
 
 func (r *TestAttemptRepository) GetByID(ctx context.Context, id int64) (*domain.TestAttempt, error) {
 	const q = `
-		SELECT id, user_id, subject, topic, score, language, ai_feedback, created_at, updated_at
+		SELECT id, user_id, subject, topic, score, language, ai_feedback, COALESCE(results, ''), created_at, updated_at
 		FROM test_attempts
 		WHERE id = $1;
 	`
 	var t domain.TestAttempt
 	err := r.db.QueryRow(ctx, q, id).
-		Scan(&t.ID, &t.UserID, &t.Subject, &t.Topic, &t.Score, &t.Language, &t.AIFeedback, &t.CreatedAt, &t.UpdatedAt)
+		Scan(&t.ID, &t.UserID, &t.Subject, &t.Topic, &t.Score, &t.Language, &t.AIFeedback, &t.Results, &t.CreatedAt, &t.UpdatedAt)
 	if err != nil {
 		return nil, err
 	}
@@ -44,7 +48,7 @@ func (r *TestAttemptRepository) GetByID(ctx context.Context, id int64) (*domain.
 
 func (r *TestAttemptRepository) ListByUser(ctx context.Context, userID int64) ([]domain.TestAttempt, error) {
 	const q = `
-		SELECT id, user_id, subject, topic, score, language, ai_feedback, created_at, updated_at
+		SELECT id, user_id, subject, topic, score, language, ai_feedback, COALESCE(results, ''), created_at, updated_at
 		FROM test_attempts
 		WHERE user_id = $1
 		ORDER BY created_at DESC;
@@ -58,7 +62,7 @@ func (r *TestAttemptRepository) ListByUser(ctx context.Context, userID int64) ([
 	var res []domain.TestAttempt
 	for rows.Next() {
 		var t domain.TestAttempt
-		if err := rows.Scan(&t.ID, &t.UserID, &t.Subject, &t.Topic, &t.Score, &t.Language, &t.AIFeedback, &t.CreatedAt, &t.UpdatedAt); err != nil {
+		if err := rows.Scan(&t.ID, &t.UserID, &t.Subject, &t.Topic, &t.Score, &t.Language, &t.AIFeedback, &t.Results, &t.CreatedAt, &t.UpdatedAt); err != nil {
 			return nil, err
 		}
 		res = append(res, t)
@@ -75,7 +79,7 @@ func (r *TestAttemptRepository) Delete(ctx context.Context, id int64) error {
 
 func (r *TestAttemptRepository) ListAll(ctx context.Context) ([]domain.TestAttempt, error) {
 	const q = `
-		SELECT id, user_id, subject, topic, score, language, ai_feedback, created_at, updated_at
+		SELECT id, user_id, subject, topic, score, language, ai_feedback, COALESCE(results, ''), created_at, updated_at
 		FROM test_attempts
 		ORDER BY created_at DESC;
 	`
@@ -88,7 +92,7 @@ func (r *TestAttemptRepository) ListAll(ctx context.Context) ([]domain.TestAttem
 	var res []domain.TestAttempt
 	for rows.Next() {
 		var t domain.TestAttempt
-		if err := rows.Scan(&t.ID, &t.UserID, &t.Subject, &t.Topic, &t.Score, &t.Language, &t.AIFeedback, &t.CreatedAt, &t.UpdatedAt); err != nil {
+		if err := rows.Scan(&t.ID, &t.UserID, &t.Subject, &t.Topic, &t.Score, &t.Language, &t.AIFeedback, &t.Results, &t.CreatedAt, &t.UpdatedAt); err != nil {
 			return nil, err
 		}
 		res = append(res, t)

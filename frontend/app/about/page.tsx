@@ -54,7 +54,7 @@ export default function AboutPage() {
               <p className="mt-1 text-xs text-muted-foreground md:text-sm">Персональные вопросы</p>
             </div>
             <div>
-              <p className="text-lg font-bold text-foreground md:text-xl">5 человек</p>
+              <p className="text-lg font-bold text-foreground md:text-xl">4 человек</p>
               <p className="mt-1 text-xs text-muted-foreground md:text-sm">Overclock Team</p>
             </div>
             <div>
