@@ -19,7 +19,7 @@ func NewRouter(
 	r := gin.Default()
 
 	r.Use(cors.New(cors.Config{
-		AllowOrigins:     []string{"http://localhost:3000", "http://10.214.245.244:3000", "http://172.22.113.214:3000"},
+		AllowOrigins:     []string{"http://localhost:3000", "http://10.214.245.244:3000", "http://172.22.113.214:3000", "http://26.154.191.215:3000"},
 		AllowMethods:     []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
 		AllowHeaders:     []string{"Origin", "Content-Type", "Authorization"},
 		ExposeHeaders:    []string{"Content-Length"},
