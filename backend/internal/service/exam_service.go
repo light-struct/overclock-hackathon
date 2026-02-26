@@ -101,3 +101,7 @@ func (s *ExamService) ListAttemptsForUser(ctx context.Context, userID int64) ([]
 	return s.attempts.ListByUser(ctx, userID)
 }
 
+
+func (s *ExamService) ListAllAttempts(ctx context.Context) ([]domain.TestAttempt, error) {
+	return s.attempts.ListAll(ctx)
+}

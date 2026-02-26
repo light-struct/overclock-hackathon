@@ -21,6 +21,7 @@ func (h *AuthHandler) RegisterRoutes(r *gin.RouterGroup) {
 	r.POST("/register", h.register)
 	r.POST("/login", h.login)
 	r.POST("/logout", h.logout)
+	r.GET("/users", h.listUsers)
 }
 
 func (h *AuthHandler) Me(c *gin.Context) {
@@ -56,7 +57,18 @@ func (h *AuthHandler) Me(c *gin.Context) {
 		"id":    user.ID,
 		"name":  user.Username,
 		"email": user.Email,
+		"role":  user.Role,
 	})
+}
+
+func (h *AuthHandler) listUsers(c *gin.Context) {
+	users, err := h.svc.ListAllUsers(c.Request.Context())
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	
+	c.JSON(http.StatusOK, gin.H{"users": users})
 }
 
 type registerRequest struct {

@@ -24,6 +24,7 @@ export function ProfileCard() {
   const { token, logout, t } = useApp()
 
   const [user, setUser] = useState<User | null>(null)
+  const [allUsers, setAllUsers] = useState<User[]>([])
   const [attempts, setAttempts] = useState<Attempt[] | null>(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
@@ -55,6 +56,17 @@ export function ProfileCard() {
         const data: User = await res.json()
         setUser(data)
 
+        // Если админ - загружаем всех пользователей
+        if (data.role === 'admin') {
+          const usersRes = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/users`, {
+            headers: { Authorization: `Bearer ${tok}` },
+          })
+          if (usersRes.ok) {
+            const usersData = await usersRes.json()
+            setAllUsers(usersData.users || [])
+          }
+        }
+
         // Получаем все попытки
         const attemptsRes = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/exam/attempts`, {
           headers: { Authorization: `Bearer ${tok}` },
@@ -71,13 +83,14 @@ export function ProfileCard() {
           arr = arr.filter(a => a) // убираем null/undefined
 
           if (data.role === 'admin') {
-            // админ видит всех студентов
+            // админ видит всех студентов с именами
+            const userMap = new Map(allUsers.map(u => [u.id, u.name]))
             const adminAttempts = arr.map(a => ({
               id: a.id ?? 'unknown',
               user_id: a.user_id ?? 'unknown',
               score: a.score ?? 0,
               created_at: a.created_at ?? null,
-              student_name: a?.user_name ?? a?.name ?? 'Unknown'
+              student_name: userMap.get(String(a.user_id)) || 'Unknown'
             }))
             setAttempts(adminAttempts)
           } else {
@@ -101,7 +114,7 @@ export function ProfileCard() {
     }
 
     fetchProfile()
-  }, [token])
+  }, [token, allUsers])
 
   const formatDateSafe = (dateStr: string | null | undefined) => {
     if (!dateStr) return '-'

@@ -205,6 +205,20 @@ export default function AboutPage() {
             <Mail className="h-4 w-4" />
             overclocknarxoz@gmail.com
             <ArrowRight className="h-4 w-4" />
+          </a> <div></div>
+          <a
+              href="https://github.com/light-struct/overclock-hackathon"
+              className="mt-8 inline-flex items-center gap-2.5 rounded-xl bg-primary px-7 py-3.5 text-sm font-bold text-primary-foreground shadow-lg shadow-primary/20 transition-all hover:shadow-xl hover:shadow-primary/30 hover:brightness-110"
+          >
+            <Image
+                src="/GitHub_Invertocat_White.svg"
+                alt="GitHub logo"
+                width={15}
+                height={15}
+                priority
+            />
+            GitHub репозитории проекта
+            <ArrowRight className="h-4 w-4" />
           </a>
         </div>
       </section>

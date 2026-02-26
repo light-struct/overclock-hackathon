@@ -1,7 +1,8 @@
 "use client"
 
+import { useEffect, useState } from "react"
 import Link from "next/link"
-import { GraduationCap, LogOut, Globe, User } from "lucide-react"
+import { GraduationCap, LogOut, Globe, User, Shield } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { useApp } from "@/lib/app-context"
 import {
@@ -13,7 +14,28 @@ import {
 
 export function Header() {
   const { token, logout, language, setLanguage, t } = useApp()
-  
+  const [userRole, setUserRole] = useState<string | null>(null)
+
+  useEffect(() => {
+    const fetchRole = async () => {
+      const tok = token || localStorage.getItem('token')
+      if (!tok) return
+
+      try {
+        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/me`, {
+          headers: { Authorization: `Bearer ${tok}` },
+        })
+        if (res.ok) {
+          const data = await res.json()
+          setUserRole(data.role)
+        }
+      } catch (error) {
+        console.error('Failed to fetch user role:', error)
+      }
+    }
+
+    fetchRole()
+  }, [token])
 
   return (
     
@@ -29,13 +51,13 @@ export function Header() {
         </Link>
         <nav className="hidden items-center gap-8 md:flex">
           <a
-            href="#features"
+            href="/#features"
             className="text-sm font-medium text-muted-foreground transition-colors hover:text-primary"
           >
             {t.header.features}
           </a>
           <a
-            href="#how-it-works"
+            href="/#how-it-works"
             className="text-sm font-medium text-muted-foreground transition-colors hover:text-primary"
           >
             {t.header.howItWorks}
@@ -87,6 +109,14 @@ export function Header() {
                   <span className="hidden sm:inline">{t.header.profile}</span>
                 </Link>
               </Button>
+              {userRole === 'admin' && (
+                <Button asChild size="sm" variant="ghost">
+                  <Link href="/admin" className="flex items-center gap-2">
+                    <Shield className="h-4 w-4" />
+                    <span className="hidden sm:inline">Admin</span>
+                  </Link>
+                </Button>
+              )}
               <Button variant="ghost" size="sm" onClick={logout}>
                 <LogOut className="h-4 w-4" />
               </Button>

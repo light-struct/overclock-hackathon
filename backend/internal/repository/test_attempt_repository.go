@@ -72,3 +72,26 @@ func (r *TestAttemptRepository) Delete(ctx context.Context, id int64) error {
 	return err
 }
 
+
+func (r *TestAttemptRepository) ListAll(ctx context.Context) ([]domain.TestAttempt, error) {
+	const q = `
+		SELECT id, user_id, subject, topic, score, language, ai_feedback, created_at, updated_at
+		FROM test_attempts
+		ORDER BY created_at DESC;
+	`
+	rows, err := r.db.Query(ctx, q)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var res []domain.TestAttempt
+	for rows.Next() {
+		var t domain.TestAttempt
+		if err := rows.Scan(&t.ID, &t.UserID, &t.Subject, &t.Topic, &t.Score, &t.Language, &t.AIFeedback, &t.CreatedAt, &t.UpdatedAt); err != nil {
+			return nil, err
+		}
+		res = append(res, t)
+	}
+	return res, rows.Err()
+}

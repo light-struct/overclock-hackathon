@@ -4,6 +4,7 @@ import (
 	"net/http"
 
 	"backend/internal/auth"
+	"backend/internal/domain"
 	"backend/internal/service"
 
 	"github.com/gin-gonic/gin"
@@ -51,7 +52,19 @@ func (h *ExamHandler) listAttempts(c *gin.Context) {
 		return
 	}
 
-	attempts, err := h.svc.ListAttemptsForUser(c.Request.Context(), userID)
+	// Check if user is admin
+	roleVal, _ := c.Get(auth.ContextRoleKey)
+	role, _ := roleVal.(string)
+	
+	var attempts []domain.TestAttempt
+	var err error
+	
+	if role == "admin" {
+		attempts, err = h.svc.ListAllAttempts(c.Request.Context())
+	} else {
+		attempts, err = h.svc.ListAttemptsForUser(c.Request.Context(), userID)
+	}
+	
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return

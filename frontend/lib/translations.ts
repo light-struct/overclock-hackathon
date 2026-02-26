@@ -135,6 +135,25 @@ export const translations = {
       suggestion1: "URL мекенжайын тексеріңіз",
       suggestion2: "Басты бетке қайту",
       suggestion3: "Қолдау көрсетуге хабарласыңыз"
+    },
+    admin: {
+      title: "Админ панелі",
+      subtitle: "Пайдаланушыларды басқару және барлық тест әрекеттерін көру",
+      accessDenied: "Қол жеткізу тыйым салынған",
+      adminOnly: "Тек әкімшілер үшін",
+      goHome: "Басты бетке",
+      loading: "Жүктелуде...",
+      allUsers: "Барлық пайдаланушылар",
+      name: "Аты",
+      email: "Email",
+      role: "Рөлі",
+      registered: "Тіркелген",
+      allAttempts: "Барлық тест әрекеттері",
+      student: "Студент",
+      subject: "Пән",
+      difficulty: "Қиындық",
+      score: "Балл",
+      date: "Күні"
     }
   },
   ru: {
@@ -271,6 +290,25 @@ export const translations = {
       suggestion1: "Проверьте URL на опечатки",
       suggestion2: "Вернуться на главную",
       suggestion3: "Если проблема повторяется, сообщите администратору"
+    },
+    admin: {
+      title: "Админ панель",
+      subtitle: "Управление пользователями и просмотр всех попыток тестов",
+      accessDenied: "Доступ запрещен",
+      adminOnly: "Только для администраторов",
+      goHome: "На главную",
+      loading: "Загрузка...",
+      allUsers: "Все пользователи",
+      name: "Имя",
+      email: "Email",
+      role: "Роль",
+      registered: "Зарегистрирован",
+      allAttempts: "Все попытки тестов",
+      student: "Студент",
+      subject: "Предмет",
+      difficulty: "Сложность",
+      score: "Балл",
+      date: "Дата"
     }
   },
   en: {
@@ -407,6 +445,25 @@ export const translations = {
       suggestion1: "Check the URL for typos",
       suggestion2: "Return to the homepage",
       suggestion3: "Contact support if the problem persists"
+    },
+    admin: {
+      title: "Admin Panel",
+      subtitle: "Manage users and view all test attempts",
+      accessDenied: "Access Denied",
+      adminOnly: "Admin only",
+      goHome: "Go Home",
+      loading: "Loading...",
+      allUsers: "All Users",
+      name: "Name",
+      email: "Email",
+      role: "Role",
+      registered: "Registered",
+      allAttempts: "All Test Attempts",
+      student: "Student",
+      subject: "Subject",
+      difficulty: "Difficulty",
+      score: "Score",
+      date: "Date"
     }
   }
 

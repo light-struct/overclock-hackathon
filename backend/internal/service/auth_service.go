@@ -115,3 +115,8 @@ func (s *AuthService) Login(ctx context.Context, email, password string) (*AuthR
 func (s *AuthService) GetUserByID(ctx context.Context, id int64) (*domain.User, error) {
 	return s.userRepo.GetByID(ctx, id)
 }
+
+// ListAllUsers returns all users (for admin)
+func (s *AuthService) ListAllUsers(ctx context.Context) ([]domain.User, error) {
+	return s.userRepo.List(ctx)
+}
