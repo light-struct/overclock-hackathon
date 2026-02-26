@@ -7,6 +7,8 @@ import {
   GraduationCap,
   BookOpen,
   Flame,
+  Sparkles,
+  Zap,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -35,6 +37,19 @@ const difficulties = [
   },
 ]
 
+const aiProviders = [
+  {
+    value: "gemini" as const,
+    label: "Gemini 2.5 Flash",
+    icon: Sparkles,
+  },
+  {
+    value: "groq" as const,
+    label: "Groq Llama 3.3",
+    icon: Zap,
+  },
+]
+
 interface QuizSetupProps {
   onStart: (config: QuizConfig) => void
 }
@@ -46,11 +61,12 @@ export function QuizSetup({ onStart }: QuizSetupProps) {
   const [difficulty, setDifficulty] = useState<"easy" | "medium" | "hard">(
     "medium"
   )
+  const [aiProvider, setAiProvider] = useState<"gemini" | "groq">("gemini")
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
     if (!topic.trim()) return
-    onStart({ topic: topic.trim(), numQuestions, difficulty })
+    onStart({ topic: topic.trim(), numQuestions, difficulty, aiProvider })
   }
 
   return (
@@ -133,6 +149,27 @@ export function QuizSetup({ onStart }: QuizSetupProps) {
                     <d.icon className="h-5 w-5" />
                     <span className="text-xs font-semibold">{t.quiz[d.label]}</span>
                     <span className="text-[10px] opacity-70">{t.quiz[d.description]}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label className="text-foreground">{t.quiz.aiProvider}</Label>
+              <div className="grid grid-cols-2 gap-3">
+                {aiProviders.map((provider) => (
+                  <button
+                    key={provider.value}
+                    type="button"
+                    onClick={() => setAiProvider(provider.value)}
+                    className={`flex flex-col items-center gap-2 rounded-xl border p-4 transition-colors ${
+                      aiProvider === provider.value
+                        ? "border-primary bg-accent text-primary"
+                        : "border-border bg-secondary text-muted-foreground hover:text-foreground hover:border-primary/30"
+                    }`}
+                  >
+                    <provider.icon className="h-5 w-5" />
+                    <span className="text-xs font-semibold text-center">{provider.label}</span>
                   </button>
                 ))}
               </div>

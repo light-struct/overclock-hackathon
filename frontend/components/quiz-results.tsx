@@ -1,5 +1,6 @@
 "use client"
 
+import { useEffect, useState } from "react"
 import {
   GraduationCap,
   CheckCircle2,
@@ -12,6 +13,7 @@ import {
 import { Button } from "@/components/ui/button"
 import { Progress } from "@/components/ui/progress"
 import type { QuizConfig, QuestionResult } from "@/lib/quiz-types"
+import { useApp } from "@/lib/app-context"
 
 interface QuizResultsProps {
   config: QuizConfig
@@ -20,6 +22,9 @@ interface QuizResultsProps {
 }
 
 export function QuizResults({ config, results, onRestart }: QuizResultsProps) {
+  const { token } = useApp()
+  const [saved, setSaved] = useState(false)
+  
   const totalScore = results.reduce((sum, r) => sum + r.score, 0)
   const maxScore = results.length
   const percentage = Math.round((totalScore / maxScore) * 100)
@@ -27,6 +32,38 @@ export function QuizResults({ config, results, onRestart }: QuizResultsProps) {
   const correctCount = results.filter((r) => r.score >= 1).length
   const partialCount = results.filter((r) => r.score > 0 && r.score < 1).length
   const incorrectCount = results.filter((r) => r.score === 0).length
+
+  // Save results to backend
+  useEffect(() => {
+    const saveAttempt = async () => {
+      if (saved) return
+      
+      const tok = token || localStorage.getItem('token')
+      if (!tok) return
+
+      try {
+        await fetch(`${process.env.NEXT_PUBLIC_API_URL}/exam/attempts`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${tok}`,
+          },
+          body: JSON.stringify({
+            subject: config.topic,
+            topic: config.difficulty,
+            score: percentage,
+            language: 'en',
+            ai_feedback: `${correctCount} correct, ${incorrectCount} incorrect`,
+          }),
+        })
+        setSaved(true)
+      } catch (error) {
+        console.error('Failed to save attempt:', error)
+      }
+    }
+
+    saveAttempt()
+  }, [config, percentage, correctCount, incorrectCount, token, saved])
 
   const getRating = () => {
     if (percentage >= 90) return { label: "Excellent", color: "text-[var(--success)]" }

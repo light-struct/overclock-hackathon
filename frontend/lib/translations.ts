@@ -26,7 +26,7 @@ export const translations = {
     hero: {
       badge: "ЖИ-қуатты тестілеу",
       title1: "ЖИ жасаған",
-      title2: "Квиздермен ақылды тестілеу",
+      title2: "квиздермен ақылды тестілеу",
       description: "Кез келген тақырыпты енгізіңіз, біздің ЖИ агент дереу жекелендірілген сұрақтар жасайды, жауаптарыңызды бағалайды және толық есеп береді.",
       startTesting: "Тестілеуді бастау",
       howItWorks: "Қалай жұмыс істейді",
@@ -73,6 +73,7 @@ export const translations = {
       topicPlaceholder: "мысалы, Екінші дүниежүзілік соғыс, Органикалық химия...",
       numQuestions: "Сұрақтар саны",
       difficulty: "Қиындық",
+      aiProvider: "ЖИ моделі",
       easy: "Оңай",
       medium: "Орташа",
       hard: "Қиын",
@@ -111,9 +112,9 @@ export const translations = {
       needsImprovement: "Жақсартуды қажет етеді"
     },
     footer: {
-      poweredBy: "Gemini ЖИ және Next.js арқылы қуатталған"
+      poweredBy: "Powered by Gemini AI and Next.js"
     }
-      ,
+    ,
     profile: {
       title: "Профиль",
       notLoggedIn: "Сіз жүйеге кірмедіңіз.",
@@ -124,17 +125,17 @@ export const translations = {
       score: "Балл",
       signIn: "Кіру"
     }
-      ,
-      notFound: {
-        title: "Бет табылмады",
-        message: "Сұралған бет жоқ немесе ол басқа жерге көшірілген.",
-        goHome: "Басты бетке",
-        login: "Кіру / Тіркелу",
-        suggestionsHeading: "Не істеу керек",
-        suggestion1: "URL мекенжайын тексеріңіз",
-        suggestion2: "Басты бетке қайту",
-        suggestion3: "Қолдау көрсетуге хабарласыңыз"
-      }
+    ,
+    notFound: {
+      title: "Бет табылмады",
+      message: "Сұралған бет жоқ немесе ол басқа жерге көшірілген.",
+      goHome: "Басты бетке",
+      login: "Кіру / Тіркелу",
+      suggestionsHeading: "Не істеу керек",
+      suggestion1: "URL мекенжайын тексеріңіз",
+      suggestion2: "Басты бетке қайту",
+      suggestion3: "Қолдау көрсетуге хабарласыңыз"
+    }
   },
   ru: {
     header: {
@@ -160,8 +161,8 @@ export const translations = {
     },
     hero: {
       badge: "ИИ-тестирование",
-      title1: "сгенерированными ИИ",
-      title2: "Становитесь лучше с квизами,",
+      title1: "Становитесь лучше с квизами,",
+      title2: "сгенерированными ИИ",
       description: "Введите любую тему, и наш ИИ агент мгновенно создаст персонализированные вопросы, оценит ваши ответы и предоставит подробный отчет.",
       startTesting: "Начать тестирование",
       howItWorks: "Как это работает?",
@@ -208,6 +209,7 @@ export const translations = {
       topicPlaceholder: "например, Вторая мировая война, Органическая химия...",
       numQuestions: "Количество вопросов",
       difficulty: "Сложность",
+      aiProvider: "ИИ модель",
       easy: "Легко",
       medium: "Средне",
       hard: "Сложно",
@@ -246,9 +248,9 @@ export const translations = {
       needsImprovement: "Требует улучшения"
     },
     footer: {
-      poweredBy: "Работает на Gemini ИИ и Next.js"
+      poweredBy: "Powered by Gemini AI and Next.js"
     }
-      ,
+    ,
     profile: {
       title: "Профиль",
       notLoggedIn: "Вы не вошли в систему.",
@@ -259,17 +261,17 @@ export const translations = {
       score: "Баллы",
       signIn: "Войти"
     }
-      ,
-      notFound: {
-        title: "Страница не найдена",
-        message: "Запрашиваемая страница отсутствует или была перемещена.",
-        goHome: "На главную",
-        login: "Войти / Регистрация",
-        suggestionsHeading: "Что можно сделать",
-        suggestion1: "Проверьте URL на опечатки",
-        suggestion2: "Вернуться на главную",
-        suggestion3: "Если проблема повторяется, сообщите администратору"
-      }
+    ,
+    notFound: {
+      title: "Страница не найдена",
+      message: "Запрашиваемая страница отсутствует или была перемещена.",
+      goHome: "На главную",
+      login: "Войти / Регистрация",
+      suggestionsHeading: "Что можно сделать",
+      suggestion1: "Проверьте URL на опечатки",
+      suggestion2: "Вернуться на главную",
+      suggestion3: "Если проблема повторяется, сообщите администратору"
+    }
   },
   en: {
     header: {
@@ -343,6 +345,7 @@ export const translations = {
       topicPlaceholder: "e.g. World War II, Organic Chemistry, JavaScript...",
       numQuestions: "Number of Questions",
       difficulty: "Difficulty",
+      aiProvider: "AI Model",
       easy: "Easy",
       medium: "Medium",
       hard: "Hard",
@@ -383,7 +386,7 @@ export const translations = {
     footer: {
       poweredBy: "Powered by Gemini AI and Next.js"
     }
-      ,
+    ,
     profile: {
       title: "Profile",
       notLoggedIn: "You are not logged in.",
@@ -394,19 +397,20 @@ export const translations = {
       score: "Score",
       signIn: "Sign in"
     }
-      ,
-      notFound: {
-        title: "Page not found",
-        message: "The page you are looking for does not exist or has been moved.",
-        goHome: "Go home",
-        login: "Login / Register",
-        suggestionsHeading: "What you can do",
-        suggestion1: "Check the URL for typos",
-        suggestion2: "Return to the homepage",
-        suggestion3: "Contact support if the problem persists"
-      }
+    ,
+    notFound: {
+      title: "Page not found",
+      message: "The page you are looking for does not exist or has been moved.",
+      goHome: "Go home",
+      login: "Login / Register",
+      suggestionsHeading: "What you can do",
+      suggestion1: "Check the URL for typos",
+      suggestion2: "Return to the homepage",
+      suggestion3: "Contact support if the problem persists"
+    }
   }
-  
+
 }
 
 export type Language = 'kk' | 'ru' | 'en'
+

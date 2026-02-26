@@ -38,6 +38,7 @@ export default function QuizPage() {
           topic: config.topic,
           numQuestions: config.numQuestions,
           difficulty: config.difficulty,
+          aiProvider: config.aiProvider || "gemini",
         }),
       })
 

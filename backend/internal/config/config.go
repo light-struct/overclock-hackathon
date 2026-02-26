@@ -13,6 +13,7 @@ type Config struct {
 	DatabaseURL  string
 	JWTSecret    string
 	GeminiAPIKey string
+	GroqAPIKey   string
 }
 
 // Load загружает .env и формирует структуру конфигурации.
@@ -26,6 +27,7 @@ func Load() *Config {
 		DatabaseURL:  os.Getenv("DATABASE_URL"),
 		JWTSecret:    os.Getenv("JWT_SECRET"),
 		GeminiAPIKey: os.Getenv("GEMINI_API_KEY"),
+		GroqAPIKey:   os.Getenv("GROQ_API_KEY"),
 	}
 
 	if cfg.DatabaseURL == "" {

@@ -2,6 +2,7 @@ export interface QuizConfig {
   topic: string
   numQuestions: number
   difficulty: "easy" | "medium" | "hard"
+  aiProvider?: "gemini" | "groq"
 }
 
 export interface QuestionResult {

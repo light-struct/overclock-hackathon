@@ -25,6 +25,7 @@ type GenerateQuizInput struct {
 	Topic        string `json:"topic"`
 	NumQuestions int    `json:"numQuestions"`
 	Difficulty   string `json:"difficulty"`
+	AIProvider   string `json:"aiProvider"` // "gemini" or "groq"
 }
 
 // GenerateQuiz вызывает Gemini и возвращает уже распаршенный массив вопросов.
@@ -35,7 +36,18 @@ func (s *ExamService) GenerateQuiz(ctx context.Context, in GenerateQuizInput) (a
 		"hard":   "Advanced analytical questions involving edge cases, synthesis, and deep understanding.",
 	}[in.Difficulty]
 
+	// Get knowledge base context for topic
+	knowledgeContext := s.ai.GetKnowledgeForTopic(in.Topic)
+	
+	// Default to gemini if not specified
+	aiProvider := in.AIProvider
+	if aiProvider == "" {
+		aiProvider = "gemini"
+	}
+
 	prompt := fmt.Sprintf(`Generate a quiz about "%s" with exactly %d questions at %s difficulty level.
+
+%s
 
 %s
 
@@ -47,9 +59,9 @@ Each element must be an object with these exact fields:
 - "options": array of 4 answer options as strings (A, B, C, D) — even for true/false, provide 4 options
 - "correctAnswer": the exact text of the correct option (must match one of the options exactly)
 
-Return ONLY the JSON array.`, in.Topic, in.NumQuestions, in.Difficulty, difficultyGuide)
+Return ONLY the JSON array.`, in.Topic, in.NumQuestions, in.Difficulty, difficultyGuide, knowledgeContext)
 
-	text, err := s.ai.GenerateQuizQuestions(ctx, prompt)
+	text, err := s.ai.GenerateQuizQuestions(ctx, prompt, aiProvider)
 	if err != nil {
 		return nil, err
 	}

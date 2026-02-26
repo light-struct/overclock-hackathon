@@ -22,7 +22,7 @@ export function HeroSection() {
         </div>
 
         <h1 className="text-balance text-4xl font-bold leading-tight tracking-tight text-foreground md:text-6xl lg:text-7xl">
-          {t.hero.title2} <span className="text-primary">{t.hero.title1}</span>
+           {t.hero.title1} <span className="text-primary">{t.hero.title2}</span>
         </h1>
 
         <p className="mx-auto mt-6 max-w-2xl text-pretty text-lg leading-relaxed text-muted-foreground">

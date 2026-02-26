@@ -17,6 +17,7 @@ const AppContext = createContext<AppContextType | undefined>(undefined)
 export function AppProvider({ children }: { children: ReactNode }) {
   const [language, setLanguage] = useState<Language>('en')
   const [token, setToken] = useState<string | null>(null)
+  const [mounted, setMounted] = useState(false)
 
   useEffect(() => {
     const savedLang = localStorage.getItem('language') as Language
@@ -27,11 +28,15 @@ export function AppProvider({ children }: { children: ReactNode }) {
     if (savedToken) {
       setToken(savedToken)
     }
+    setMounted(true)
   }, [])
 
   const handleSetLanguage = (lang: Language) => {
     setLanguage(lang)
     localStorage.setItem('language', lang)
+    // Force re-render
+    setMounted(false)
+    setTimeout(() => setMounted(true), 0)
   }
 
   const handleSetToken = (newToken: string | null) => {
@@ -45,6 +50,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   const logout = () => {
     handleSetToken(null)
+  }
+
+  if (!mounted) {
+    return null
   }
 
   return (
