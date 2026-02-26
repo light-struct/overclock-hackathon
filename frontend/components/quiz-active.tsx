@@ -7,14 +7,12 @@ import {
   XCircle,
   Loader2,
   ArrowRight,
+  MessageSquare,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Progress } from "@/components/ui/progress"
 import type { QuizConfig, QuestionResult } from "@/lib/quiz-types"
-
-// app/api/quiz/evaluate/route.ts
-const apiKey = process.env.GEMINI_API_KEY 
 
 interface Question {
   questionNumber: number
@@ -44,6 +42,8 @@ export function QuizActive({
     correctAnswer: string
     explanation: string
   } | null>(null)
+  const [extraExplanation, setExtraExplanation] = useState<string | null>(null)
+  const [loadingExplain, setLoadingExplain] = useState(false)
   const [results, setResults] = useState<QuestionResult[]>([])
 
   const currentQuestion = questions[currentIndex]
@@ -122,6 +122,32 @@ export function QuizActive({
       setCurrentIndex((prev) => prev + 1)
       setSelectedAnswer(null)
       setFeedback(null)
+      setExtraExplanation(null)
+    }
+  }
+
+  const handleExplain = async () => {
+    if (!feedback || feedback.score >= 1) return
+    setLoadingExplain(true)
+    setExtraExplanation(null)
+    try {
+      const res = await fetch("/api/quiz/explain", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          question: currentQuestion.question,
+          userAnswer: selectedAnswer,
+          correctAnswer: feedback.correctAnswer,
+          score: feedback.score,
+          existingExplanation: feedback.explanation,
+        }),
+      })
+      const data = await res.json()
+      setExtraExplanation(data.explanation || feedback.explanation)
+    } catch {
+      setExtraExplanation(feedback.explanation)
+    } finally {
+      setLoadingExplain(false)
     }
   }
 
@@ -272,6 +298,30 @@ export function QuizActive({
               <p className="text-sm leading-relaxed text-muted-foreground">
                 {feedback.explanation}
               </p>
+              {feedback.score < 1 && (
+                <>
+                  {extraExplanation && (
+                    <div className="mt-3 rounded-lg border border-border bg-background/50 p-3">
+                      <p className="text-xs font-semibold text-muted-foreground mb-1">AI explanation</p>
+                      <p className="text-sm leading-relaxed">{extraExplanation}</p>
+                    </div>
+                  )}
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="mt-3 gap-2"
+                    onClick={handleExplain}
+                    disabled={loadingExplain}
+                  >
+                    {loadingExplain ? (
+                      <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                    ) : (
+                      <MessageSquare className="h-3.5 w-3.5" />
+                    )}
+                    Explain
+                  </Button>
+                </>
+              )}
             </div>
           )}
         </div>

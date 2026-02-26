@@ -15,6 +15,8 @@ interface User {
 interface Attempt {
   id: string
   user_id: string
+  subject?: string
+  topic?: string
   score: number
   created_at: string | null
   student_name?: string
@@ -45,6 +47,7 @@ export function ProfileCard() {
 
       setLoading(true)
       setError('')
+      setAttempts(null)
 
       try {
         // Получаем текущего пользователя
@@ -57,17 +60,19 @@ export function ProfileCard() {
         setUser(data)
 
         // Если админ - загружаем всех пользователей
+        let adminUsers: User[] = []
         if (data.role === 'admin') {
           const usersRes = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/users`, {
             headers: { Authorization: `Bearer ${tok}` },
           })
           if (usersRes.ok) {
             const usersData = await usersRes.json()
-            setAllUsers(usersData.users || [])
+            adminUsers = usersData.users || []
+            setAllUsers(adminUsers)
           }
         }
 
-        // Получаем все попытки
+        // Получаем все попытки (бэкенд для студента уже отдаёт только его попытки)
         const attemptsRes = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/exam/attempts`, {
           headers: { Authorization: `Bearer ${tok}` },
         })
@@ -78,33 +83,29 @@ export function ProfileCard() {
 
           if (Array.isArray(d.attempts)) arr = d.attempts
           else if (Array.isArray(d)) arr = d
-          else if (d && typeof d === 'object') arr = Object.values(d)
+          else if (d && typeof d === 'object' && d.attempts) arr = Array.isArray(d.attempts) ? d.attempts : []
 
-          arr = arr.filter(a => a) // убираем null/undefined
+          arr = arr.filter(a => a && (a.id != null || a.user_id != null))
+          const seen = new Set<string>()
+          arr = arr.filter(a => {
+            const key = String(a.id ?? a.user_id ?? '')
+            if (!key || seen.has(key)) return false
+            seen.add(key)
+            return true
+          })
 
-          if (data.role === 'admin') {
-            // админ видит всех студентов с именами
-            const userMap = new Map(allUsers.map(u => [u.id, u.name]))
-            const adminAttempts = arr.map(a => ({
-              id: a.id ?? 'unknown',
-              user_id: a.user_id ?? 'unknown',
-              score: a.score ?? 0,
-              created_at: a.created_at ?? null,
-              student_name: userMap.get(String(a.user_id)) || 'Unknown'
-            }))
-            setAttempts(adminAttempts)
-          } else {
-            // студент видит только свои попытки
-            const ownAttempts = arr
-              .filter(a => a.user_id === data.id)
-              .map(a => ({
-                id: a.id ?? 'unknown',
-                user_id: a.user_id ?? data.id,
-                score: a.score ?? 0,
-                created_at: a.created_at ?? null
-              }))
-            setAttempts(ownAttempts)
-          }
+          const userMap = new Map(adminUsers.map(u => [u.id, u.name]))
+          setAttempts(arr.map(a => ({
+            id: String(a.id ?? ''),
+            user_id: String(a.user_id ?? ''),
+            subject: a.subject,
+            topic: a.topic,
+            score: typeof a.score === 'number' ? a.score : Number(a.score) || 0,
+            created_at: a.created_at ?? null,
+            student_name: data.role === 'admin' ? (userMap.get(String(a.user_id)) || 'Unknown') : undefined
+          })))
+        } else {
+          setAttempts([])
         }
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Failed to load profile')
@@ -114,7 +115,7 @@ export function ProfileCard() {
     }
 
     fetchProfile()
-  }, [token, allUsers])
+  }, [token])
 
   const formatDateSafe = (dateStr: string | null | undefined) => {
     if (!dateStr) return '-'
@@ -159,34 +160,39 @@ export function ProfileCard() {
           </div>
         )}
 
-        {attempts && (
+        {user && (
           <div className="mt-6">
             <h3 className="text-lg font-semibold mb-3">{t.profile.attemptsHeading}</h3>
-
-            {attempts.length === 0 ? (
+            {attempts === null ? (
+              <p className="text-sm text-muted-foreground">{t.profile.loadingAttempts}</p>
+            ) : attempts.length === 0 ? (
               <p className="text-sm text-muted-foreground">{t.profile.noAttempts}</p>
             ) : (
               <ul className="space-y-3">
                 {attempts.map(a => {
                   const displayDate = formatDateSafe(a.created_at)
                   const studentName = a.student_name ?? ''
-
                   return (
                     <li key={a.id ?? JSON.stringify(a)} className="rounded-md border p-3 bg-card">
-                      <div className="flex items-center justify-between">
+                      <div className="flex items-center justify-between gap-2 flex-wrap">
                         <div>
                           {user?.role === 'admin' && studentName && (
-                            <div className="text-sm text-muted-foreground">
-                              Student: {studentName}
-                            </div>
+                            <div className="text-sm text-muted-foreground">Student: {studentName}</div>
                           )}
                           <div className="text-sm text-muted-foreground">{t.profile.date}</div>
                           <div className="text-sm">{displayDate}</div>
+                          {(a.subject || a.topic) && (
+                            <div className="text-xs text-muted-foreground mt-1">
+                              {[a.subject, a.topic].filter(Boolean).join(' · ')}
+                            </div>
+                          )}
                         </div>
-                        <div className="text-right">
-                          <div className="text-sm text-muted-foreground">{t.profile.score}</div>
-                          <div className="text-lg font-medium">
-                            {typeof a.score === 'number' ? a.score : a.score ? String(a.score) : '-'}
+                        <div className="flex items-center gap-3">
+                          <div className="text-right">
+                            <div className="text-sm text-muted-foreground">{t.profile.score}</div>
+                            <div className="text-lg font-medium">
+                              {typeof a.score === 'number' ? a.score : a.score ? String(a.score) : '-'}
+                            </div>
                           </div>
                         </div>
                       </div>

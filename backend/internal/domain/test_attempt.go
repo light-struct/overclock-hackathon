@@ -10,6 +10,7 @@ type TestAttempt struct {
 	Score      float64   `json:"score"`
 	Language   string    `json:"language"`
 	AIFeedback string    `json:"ai_feedback"`
+	Results    string    `json:"results,omitempty"` // JSON array of question results
 	CreatedAt  time.Time `json:"created_at"`
 	UpdatedAt  time.Time `json:"updated_at"`
 }

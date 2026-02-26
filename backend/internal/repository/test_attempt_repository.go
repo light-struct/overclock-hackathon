@@ -17,6 +17,7 @@ func NewTestAttemptRepository(db *pgxpool.Pool) *TestAttemptRepository {
 }
 
 func (r *TestAttemptRepository) Create(ctx context.Context, t *domain.TestAttempt) error {
+	// INSERT без results — работает без миграции (колонка results опциональна)
 	const q = `
 		INSERT INTO test_attempts (user_id, subject, topic, score, language, ai_feedback)
 		VALUES ($1, $2, $3, $4, $5, $6)
@@ -28,6 +29,7 @@ func (r *TestAttemptRepository) Create(ctx context.Context, t *domain.TestAttemp
 }
 
 func (r *TestAttemptRepository) GetByID(ctx context.Context, id int64) (*domain.TestAttempt, error) {
+	// SELECT без results — страница попытки работает и без миграции
 	const q = `
 		SELECT id, user_id, subject, topic, score, language, ai_feedback, created_at, updated_at
 		FROM test_attempts
@@ -43,6 +45,7 @@ func (r *TestAttemptRepository) GetByID(ctx context.Context, id int64) (*domain.
 }
 
 func (r *TestAttemptRepository) ListByUser(ctx context.Context, userID int64) ([]domain.TestAttempt, error) {
+	// SELECT без results — список работает без колонки results
 	const q = `
 		SELECT id, user_id, subject, topic, score, language, ai_feedback, created_at, updated_at
 		FROM test_attempts

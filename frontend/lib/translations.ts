@@ -123,7 +123,13 @@ export const translations = {
       noAttempts: "Әзірше әрекеттер жоқ.",
       date: "Күні",
       score: "Балл",
-      signIn: "Кіру"
+      signIn: "Кіру",
+      viewAttempt: "Қарау",
+      backToProfile: "Профильге оралу",
+      explain: "Түсіндір",
+      yourAnswer: "Сіздің жауабыңыз",
+      correctAnswerLabel: "Дұрыс жауап",
+      aiExplanation: "ЖИ түсініктемесі"
     }
     ,
     notFound: {
@@ -278,7 +284,13 @@ export const translations = {
       noAttempts: "Попыток пока нет.",
       date: "Дата",
       score: "Баллы",
-      signIn: "Войти"
+      signIn: "Войти",
+      viewAttempt: "Смотреть",
+      backToProfile: "Назад в профиль",
+      explain: "Объяснить",
+      yourAnswer: "Ваш ответ",
+      correctAnswerLabel: "Правильный ответ",
+      aiExplanation: "Объяснение от ИИ"
     }
     ,
     notFound: {
@@ -433,7 +445,13 @@ export const translations = {
       noAttempts: "No attempts yet.",
       date: "Date",
       score: "Score",
-      signIn: "Sign in"
+      signIn: "Sign in",
+      viewAttempt: "View",
+      backToProfile: "Back to profile",
+      explain: "Explain",
+      yourAnswer: "Your answer",
+      correctAnswerLabel: "Correct answer",
+      aiExplanation: "AI explanation"
     }
     ,
     notFound: {
