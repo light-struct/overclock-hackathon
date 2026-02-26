@@ -1,9 +1,13 @@
+import { profile } from "console"
+
 export const translations = {
   kk: {
     header: {
       features: "Мүмкіндіктер",
       howItWorks: "Қалай жұмыс істейді",
+      about: "Жоба туралы",
       startQuiz: "Квизді бастау",
+      profile: "Профиль",
       logout: "Шығу"
     },
     auth: {
@@ -110,6 +114,17 @@ export const translations = {
       poweredBy: "Gemini ЖИ және Next.js арқылы қуатталған"
     }
       ,
+    profile: {
+      title: "Профиль",
+      notLoggedIn: "Сіз жүйеге кірмедіңіз.",
+      attemptsHeading: "Тестілеу нәтижелері",
+      loadingAttempts: "Пайдаланушы әрекеттері жүктелуде...",
+      noAttempts: "Әзірше әрекеттер жоқ.",
+      date: "Күні",
+      score: "Балл",
+      signIn: "Кіру"
+    }
+      ,
       notFound: {
         title: "Бет табылмады",
         message: "Сұралған бет жоқ немесе ол басқа жерге көшірілген.",
@@ -125,7 +140,9 @@ export const translations = {
     header: {
       features: "Возможности",
       howItWorks: "Как это работает?",
+      about: "О проекте",
       startQuiz: "Начать тест",
+      profile: "Профиль",
       logout: "Выйти"
     },
     auth: {
@@ -232,6 +249,17 @@ export const translations = {
       poweredBy: "Работает на Gemini ИИ и Next.js"
     }
       ,
+    profile: {
+      title: "Профиль",
+      notLoggedIn: "Вы не вошли в систему.",
+      attemptsHeading: "Результаты тестов",
+      loadingAttempts: "Загрузка попыток...",
+      noAttempts: "Попыток пока нет.",
+      date: "Дата",
+      score: "Баллы",
+      signIn: "Войти"
+    }
+      ,
       notFound: {
         title: "Страница не найдена",
         message: "Запрашиваемая страница отсутствует или была перемещена.",
@@ -247,7 +275,9 @@ export const translations = {
     header: {
       features: "Features",
       howItWorks: "How It Works",
+      about: "About",
       startQuiz: "Start Quiz",
+      profile: "Profile",
       logout: "Logout"
     },
     auth: {
@@ -354,6 +384,17 @@ export const translations = {
       poweredBy: "Powered by Gemini AI and Next.js"
     }
       ,
+    profile: {
+      title: "Profile",
+      notLoggedIn: "You are not logged in.",
+      attemptsHeading: "Test Attempts",
+      loadingAttempts: "Loading attempts...",
+      noAttempts: "No attempts yet.",
+      date: "Date",
+      score: "Score",
+      signIn: "Sign in"
+    }
+      ,
       notFound: {
         title: "Page not found",
         message: "The page you are looking for does not exist or has been moved.",
@@ -365,6 +406,7 @@ export const translations = {
         suggestion3: "Contact support if the problem persists"
       }
   }
+  
 }
 
 export type Language = 'kk' | 'ru' | 'en'

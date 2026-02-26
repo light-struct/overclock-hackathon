@@ -6,42 +6,57 @@ interface EvaluateRequest {
   question: string
   userAnswer: string
   correctAnswer: string
-  apiKey: string
 }
 
 export async function POST(req: NextRequest) {
   try {
-    const { question, userAnswer, correctAnswer, apiKey }: EvaluateRequest =
-      await req.json()
+    const body: EvaluateRequest = await req.json()
+    const { question, userAnswer, correctAnswer } = body
 
-    if (!apiKey) {
-      return NextResponse.json(
-        { error: "Gemini API key is required" },
-        { status: 400 }
-      )
+    // 🔎 Валидация входных данных
+    if (
+      !question?.trim() ||
+      !userAnswer?.trim() ||
+      !correctAnswer?.trim()
+    ) {
+      return NextResponse.json({ error: "Invalid input data" }, { status: 400 })
     }
 
-    const prompt = `You are a quiz evaluator. Evaluate the student's answer.
+    const apiKey = process.env.GEMINI_API_KEY
+    if (!apiKey) {
+      console.error("❌ GEMINI_API_KEY is missing")
+      return NextResponse.json({ error: "Server configuration error" }, { status: 500 })
+    }
+
+    // ⚡ Локальная проверка полного совпадения
+    const normalizedUser = userAnswer.toLowerCase().trim()
+    const normalizedCorrect = correctAnswer.toLowerCase().trim()
+    if (normalizedUser === normalizedCorrect) {
+      return NextResponse.json({
+        score: 1,
+        correctAnswer,
+        explanation: "Correct answer.",
+      })
+    }
+
+    // 🤖 AI evaluation
+    const prompt = `
+You are a quiz evaluator.
 
 Question: "${question}"
 Student's Answer: "${userAnswer}"
 Correct Answer: "${correctAnswer}"
 
-Respond with ONLY a valid JSON object (no markdown, no code blocks, no extra text):
+Respond ONLY with valid JSON:
 {
-  "score": <number from 0 to 1, where 1 = fully correct, 0.5 = partially correct, 0 = wrong>,
+  "score": 0 | 0.5 | 1,
   "correctAnswer": "${correctAnswer}",
-  "explanation": "<brief 1-2 sentence explanation of why the answer is right or wrong>"
+  "explanation": "1-2 sentence explanation"
 }
-
-Rules:
-- If the student's answer matches the correct answer (even with slight wording differences), score = 1
-- If partially correct, score = 0.5
-- If incorrect, score = 0
-- Return ONLY the JSON object.`
+`
 
     const response = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`,
+      `https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key=${apiKey}`,
       {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -55,36 +70,54 @@ Rules:
       }
     )
 
+    // fallback если AI упал
     if (!response.ok) {
-      const errorData = await response.json().catch(() => null)
-      const errorMessage =
-        errorData?.error?.message || `Gemini API error: ${response.status}`
-      return NextResponse.json({ error: errorMessage }, { status: 500 })
+      const errorText = await response.text()
+      console.error("🔥 Gemini API error:", errorText)
+      return NextResponse.json({
+        score: 0,
+        correctAnswer,
+        explanation: `Correct answer: ${correctAnswer}`,
+      })
     }
 
     const data = await response.json()
-    const textContent =
-      data?.candidates?.[0]?.content?.parts?.[0]?.text || ""
+    let textContent = data?.candidates?.[0]?.content?.parts?.[0]?.text || ""
+    textContent = textContent.trim()
 
-    let jsonStr = textContent.trim()
-    if (jsonStr.startsWith("```")) {
-      jsonStr = jsonStr.replace(/^```(?:json)?\n?/, "").replace(/\n?```$/, "")
+    // удалить markdown
+    if (textContent.startsWith("```")) {
+      textContent = textContent.replace(/^```(?:json)?\n?/, "").replace(/\n?```$/, "").trim()
     }
 
-    const evaluation = JSON.parse(jsonStr)
+    // извлечь JSON внутри текста
+    let evaluation
+    try {
+      const match = textContent.match(/\{[\s\S]*\}/)
+      evaluation = match ? JSON.parse(match[0]) : null
+    } catch (err) {
+      console.error("❌ JSON parse failed:", err)
+    }
+
+    // fallback если JSON не получился
+    if (!evaluation) {
+      console.warn("⚠ AI returned non-JSON, using fallback")
+      return NextResponse.json({
+        score: 0,
+        correctAnswer,
+        explanation: `Correct answer: ${correctAnswer}`,
+      })
+    }
 
     return NextResponse.json({
       score: Number(evaluation.score) || 0,
       correctAnswer: evaluation.correctAnswer || correctAnswer,
-      explanation: evaluation.explanation || "",
+      explanation: evaluation.explanation || `Correct answer: ${correctAnswer}`,
     })
   } catch (error) {
-    console.error("Evaluation error:", error)
+    console.error("💀 Evaluation fatal error:", error)
     return NextResponse.json(
-      {
-        error:
-          error instanceof Error ? error.message : "Failed to evaluate answer",
-      },
+      { error: "Failed to evaluate answer" },
       { status: 500 }
     )
   }

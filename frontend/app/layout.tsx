@@ -8,6 +8,9 @@ import './globals.css'
 const _inter = Inter({ subsets: ['latin'] })
 const _spaceMono = Space_Mono({ weight: ['400', '700'], subsets: ['latin'] })
 
+// Вот твой SVG конвертирован в base64
+const faviconSvgBase64 = `PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSJjdXJyZW50Q29sb3IiIHN0cm9rZS13aWR0aD0iMiIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIj48cGF0aCBkPSJNMjEuNDIgMTAuOTIyYTEgMSAwIDAgMC0uMDE5LTEuODM4TDEyLjgzIDUuMThhMiAyIDAgMCAwLTEuNjYgMEwyLjYgOS4wOGExIDEgMCAwIDAgMCAxLjgzMmw4LjU3IDMuOTA4YTIgMiAwIDAgMCAxLjY2IDB6Ij48L3BhdGg+PHBhdGggZD0iTTIyIDEwdjYiPjwvcGF0aD48cGF0aCBkPSJNNiAxMi41VjE2YTYgMyAwIDAgMCAxMiAwdi0zLjUiPjwvcGF0aD48L3N2Zz4=`
+
 export const metadata: Metadata = {
   title: 'QuizAgent - AI Testing Platform',
   description:
@@ -23,7 +26,7 @@ export const metadata: Metadata = {
         media: '(prefers-color-scheme: dark)',
       },
       {
-        url: '/icon.svg',
+        url: `data:image/svg+xml;base64,${faviconSvgBase64}`,
         type: 'image/svg+xml',
       },
     ],

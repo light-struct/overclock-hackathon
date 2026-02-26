@@ -13,6 +13,9 @@ import { Badge } from "@/components/ui/badge"
 import { Progress } from "@/components/ui/progress"
 import type { QuizConfig, QuestionResult } from "@/lib/quiz-types"
 
+// app/api/quiz/evaluate/route.ts
+const apiKey = process.env.GEMINI_API_KEY 
+
 interface Question {
   questionNumber: number
   question: string
@@ -60,7 +63,6 @@ export function QuizActive({
           question: currentQuestion.question,
           userAnswer: answer,
           correctAnswer: currentQuestion.correctAnswer,
-          apiKey: config.apiKey,
         }),
       })
 

@@ -28,7 +28,7 @@ export default function QuizPage() {
 
     try {
       const token = localStorage.getItem('token')
-      const response = await fetch("/api/quiz/generate", {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/exam/quiz/generate`, {
         method: "POST",
         headers: { 
           "Content-Type": "application/json",

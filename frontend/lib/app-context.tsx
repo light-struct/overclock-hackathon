@@ -26,7 +26,6 @@ export function AppProvider({ children }: { children: ReactNode }) {
     const savedToken = localStorage.getItem('token')
     if (savedToken) {
       setToken(savedToken)
-      document.cookie = `token=${savedToken}; path=/; max-age=86400`
     }
   }, [])
 
@@ -39,10 +38,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
     setToken(newToken)
     if (newToken) {
       localStorage.setItem('token', newToken)
-      document.cookie = `token=${newToken}; path=/; max-age=86400`
     } else {
       localStorage.removeItem('token')
-      document.cookie = 'token=; path=/; max-age=0'
     }
   }
 

@@ -82,7 +82,7 @@ func (s *AuthService) Register(ctx context.Context, in RegisterInput) (*AuthResu
 func (s *AuthService) Login(ctx context.Context, email, password string) (*AuthResult, error) {
 	email = strings.TrimSpace(strings.ToLower(email))
 	println("[AUTH_SERVICE] Looking up user with email:", email)
-	
+
 	user, err := s.userRepo.GetByEmail(ctx, email)
 	if err != nil {
 		println("[AUTH_SERVICE] Database error:", err.Error())
@@ -111,3 +111,7 @@ func (s *AuthService) Login(ctx context.Context, email, password string) (*AuthR
 	}, nil
 }
 
+// GetUserByID returns user by id or (nil, nil) if not found.
+func (s *AuthService) GetUserByID(ctx context.Context, id int64) (*domain.User, error) {
+	return s.userRepo.GetByID(ctx, id)
+}
