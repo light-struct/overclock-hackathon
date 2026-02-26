@@ -42,7 +42,7 @@ export function QuizResults({ config, results, onRestart }: QuizResultsProps) {
     saveStarted.current = true
     const run = async () => {
       try {
-        await fetch(`${process.env.NEXT_PUBLIC_API_URL}/exam/attempts`, {
+        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/exam/attempts`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -57,7 +57,11 @@ export function QuizResults({ config, results, onRestart }: QuizResultsProps) {
             results: JSON.stringify(results),
           }),
         })
-        setSaved(true)
+        if (res.ok) {
+          setSaved(true)
+        } else {
+          saveStarted.current = false
+        }
       } catch (error) {
         console.error('Failed to save attempt:', error)
         saveStarted.current = false

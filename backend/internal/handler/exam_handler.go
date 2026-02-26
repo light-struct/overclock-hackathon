@@ -48,8 +48,13 @@ func (h *ExamHandler) listAttempts(c *gin.Context) {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "no user in context"})
 		return
 	}
-	userID, ok := userIDVal.(int64)
-	if !ok {
+	var userID int64
+	switch v := userIDVal.(type) {
+	case int64:
+		userID = v
+	case float64:
+		userID = int64(v)
+	default:
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "invalid user id type"})
 		return
 	}
@@ -125,8 +130,13 @@ func (h *ExamHandler) saveAttempt(c *gin.Context) {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "no user in context"})
 		return
 	}
-	userID, ok := userIDVal.(int64)
-	if !ok {
+	var userID int64
+	switch v := userIDVal.(type) {
+	case int64:
+		userID = v
+	case float64:
+		userID = int64(v)
+	default:
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "invalid user id type"})
 		return
 	}

@@ -47,6 +47,7 @@ export function ProfileCard() {
 
       setLoading(true)
       setError('')
+      setAttempts(null)
 
       try {
         // Получаем текущего пользователя
@@ -59,17 +60,19 @@ export function ProfileCard() {
         setUser(data)
 
         // Если админ - загружаем всех пользователей
+        let adminUsers: User[] = []
         if (data.role === 'admin') {
           const usersRes = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/users`, {
             headers: { Authorization: `Bearer ${tok}` },
           })
           if (usersRes.ok) {
             const usersData = await usersRes.json()
-            setAllUsers(usersData.users || [])
+            adminUsers = usersData.users || []
+            setAllUsers(adminUsers)
           }
         }
 
-        // Получаем все попытки
+        // Получаем все попытки (бэкенд для студента уже отдаёт только его попытки)
         const attemptsRes = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/exam/attempts`, {
           headers: { Authorization: `Bearer ${tok}` },
         })
@@ -80,43 +83,29 @@ export function ProfileCard() {
 
           if (Array.isArray(d.attempts)) arr = d.attempts
           else if (Array.isArray(d)) arr = d
-          else if (d && typeof d === 'object') arr = Object.values(d)
+          else if (d && typeof d === 'object' && d.attempts) arr = Array.isArray(d.attempts) ? d.attempts : []
 
-          arr = arr.filter(a => a)
-          // Убираем дубликаты по id (одна попытка — одна запись)
+          arr = arr.filter(a => a && (a.id != null || a.user_id != null))
           const seen = new Set<string>()
           arr = arr.filter(a => {
-            const key = String(a.id ?? '')
-            if (seen.has(key)) return false
+            const key = String(a.id ?? a.user_id ?? '')
+            if (!key || seen.has(key)) return false
             seen.add(key)
             return true
           })
 
-          if (data.role === 'admin') {
-            const userMap = new Map(allUsers.map(u => [u.id, u.name]))
-            const adminAttempts = arr.map(a => ({
-              id: a.id ?? 'unknown',
-              user_id: a.user_id ?? 'unknown',
-              subject: a.subject,
-              topic: a.topic,
-              score: a.score ?? 0,
-              created_at: a.created_at ?? null,
-              student_name: userMap.get(String(a.user_id)) || 'Unknown'
-            }))
-            setAttempts(adminAttempts)
-          } else {
-            const ownAttempts = arr
-              .filter(a => a.user_id === data.id)
-              .map(a => ({
-                id: a.id ?? 'unknown',
-                user_id: a.user_id ?? data.id,
-                subject: a.subject,
-                topic: a.topic,
-                score: a.score ?? 0,
-                created_at: a.created_at ?? null
-              }))
-            setAttempts(ownAttempts)
-          }
+          const userMap = new Map(adminUsers.map(u => [u.id, u.name]))
+          setAttempts(arr.map(a => ({
+            id: String(a.id ?? ''),
+            user_id: String(a.user_id ?? ''),
+            subject: a.subject,
+            topic: a.topic,
+            score: typeof a.score === 'number' ? a.score : Number(a.score) || 0,
+            created_at: a.created_at ?? null,
+            student_name: data.role === 'admin' ? (userMap.get(String(a.user_id)) || 'Unknown') : undefined
+          })))
+        } else {
+          setAttempts([])
         }
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Failed to load profile')
@@ -126,7 +115,7 @@ export function ProfileCard() {
     }
 
     fetchProfile()
-  }, [token, allUsers])
+  }, [token])
 
   const formatDateSafe = (dateStr: string | null | undefined) => {
     if (!dateStr) return '-'
@@ -171,11 +160,12 @@ export function ProfileCard() {
           </div>
         )}
 
-        {attempts && (
+        {user && (
           <div className="mt-6">
             <h3 className="text-lg font-semibold mb-3">{t.profile.attemptsHeading}</h3>
-
-            {attempts.length === 0 ? (
+            {attempts === null ? (
+              <p className="text-sm text-muted-foreground">{t.profile.loadingAttempts}</p>
+            ) : attempts.length === 0 ? (
               <p className="text-sm text-muted-foreground">{t.profile.noAttempts}</p>
             ) : (
               <ul className="space-y-3">
@@ -204,11 +194,6 @@ export function ProfileCard() {
                               {typeof a.score === 'number' ? a.score : a.score ? String(a.score) : '-'}
                             </div>
                           </div>
-                          {user?.role !== 'admin' && (
-                            <Link href={`/profile/attempts/${a.id}`}>
-                              <Button variant="outline" size="sm">{t.profile.viewAttempt}</Button>
-                            </Link>
-                          )}
                         </div>
                       </div>
                     </li>
